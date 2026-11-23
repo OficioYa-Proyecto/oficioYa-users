@@ -76,7 +76,8 @@ public class UserService {
         user.setName(request.getName().trim());
         user.setEmail(email);
         user.setBirthDate(request.getBirthDate());
-        if (request.getLocalityId() != null) {
+        // RF-14. Solo el contratante tiene localidad; si no lo es, no se guarda
+        if (request.getLocalityId() != null && request.getRoles().contains(RoleName.CONTRATANTE)) {
             user.setLocality(findLocality(request.getLocalityId()));
         }
         user.setAccountStatus(AccountStatus.ACTIVE);
@@ -108,15 +109,19 @@ public class UserService {
         return userMapper.toOwn(save(user));
     }
 
-    /** RF-13. Quita TRABAJADOR o CONTRATANTE; la cuenta conserva al menos un rol **/
-    public UserResponseDTO removeRole(UUID userId, RoleName roleName) {
+    /**
+     * RF-13. Solo el administrador quita TRABAJADOR o CONTRATANTE (al aprobar una petición o directamente,
+     * vía RoleRemovalService); la cuenta conserva al menos un rol. Se permite aunque la cuenta esté inactiva.
+     * Riesgo conocido: si Worker pausa el perfil y luego falla el guardado, el perfil queda pausado con el rol
+     */
+    public UserResponseDTO removeRole(UUID adminId, UUID userId, RoleName roleName) {
         if (roleName == RoleName.ADMIN) {
-            throw new BadRequestException("El rol ADMIN no se puede quitar desde la cuenta");
+            throw new BadRequestException("El rol ADMIN no se puede quitar");
         }
-        UserModel user = getActiveUser(userId);
+        UserModel user = findUser(userId);
 
         if (hasRole(user, RoleName.ADMIN)) {
-            throw new ForbiddenOperationException("El administrador no puede quitarse roles");
+            throw new ForbiddenOperationException("No se pueden quitar roles a una cuenta de administrador");
         }
         if (!hasRole(user, roleName)) {
             throw new ConflictException("La cuenta no tiene el rol " + roleName);
@@ -126,15 +131,19 @@ public class UserService {
         }
         long activeRequests = requestsClient.countActive(userId, roleName);
         if (activeRequests > 0) {
-            throw new ConflictException("Tienes " + activeRequests + " solicitudes activas como " + roleName
-                    + "; finalízalas o cancélalas antes de quitar el rol");
+            throw new ConflictException("La cuenta tiene " + activeRequests + " solicitudes activas como " + roleName
+                    + "; deben finalizarse o cancelarse antes de quitar el rol");
         }
         if (roleName == RoleName.TRABAJADOR) {
             changeWorkerStatus(userId, WorkerClient.PAUSED);
         }
         user.getRoles().removeIf(role -> role.getName().equals(roleName.name()));
-        log.info("Rol {} quitado de la cuenta {}", roleName, userId);
-        return userMapper.toOwn(save(user));
+        // RF-14. La localidad es solo del contratante: al quitarle ese rol queda vacía
+        if (roleName == RoleName.CONTRATANTE) {
+            user.setLocality(null);
+        }
+        log.info("Admin {} quitó el rol {} de la cuenta {}", adminId, roleName, userId);
+        return userMapper.toAdmin(save(user));
     }
 
     /** RF-03 */
@@ -154,6 +163,10 @@ public class UserService {
             user.setPhones(userMapper.toPhones(request.getPhones()));
         }
         if (request.getLocalityId() != null) {
+            // RF-14. Solo el contratante puede cambiar su localidad (ni el trabajador ni el admin)
+            if (!hasRole(user, RoleName.CONTRATANTE)) {
+                throw new ForbiddenOperationException("Solo el contratante puede cambiar su localidad");
+            }
             user.setLocality(findLocality(request.getLocalityId()));
         }
         log.info("Perfil actualizado {}", userId);

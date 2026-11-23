@@ -1,7 +1,6 @@
 package edu.eci.dosw.oficioya_users.controller;
 
 import edu.eci.dosw.oficioya_users.dto.LocalityDTO;
-import edu.eci.dosw.oficioya_users.exception.ResourceNotFoundException;
 import edu.eci.dosw.oficioya_users.security.SecurityConfig;
 import edu.eci.dosw.oficioya_users.service.LocalityService;
 import io.jsonwebtoken.Jwts;
@@ -25,7 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** RF-14. El catálogo es público; los trabajadores de una localidad exigen token. Seguridad real. */
+/** RF-14. El catálogo es público. Seguridad real. */
 @WebMvcTest(LocalityController.class)
 @Import(SecurityConfig.class)
 @TestPropertySource(properties = "jwt.secret=" + LocalityControllerTest.SECRET)
@@ -59,27 +58,9 @@ class LocalityControllerTest {
     }
 
     @Test
-    void workersOfLocalityReturnsIds() throws Exception {
-        UUID workerId = UUID.randomUUID();
-        when(localityService.findWorkerIds(1L)).thenReturn(List.of(workerId));
-
+    void workersOfLocalityEndpointWasRemoved() throws Exception {
         mockMvc.perform(get(LOCALITIES + "/1/workers").header("Authorization", token()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0]").value(workerId.toString()));
-    }
-
-    @Test
-    void workersOfMissingLocalityReturns404() throws Exception {
-        when(localityService.findWorkerIds(99L)).thenThrow(new ResourceNotFoundException("Localidad no encontrada: 99"));
-
-        mockMvc.perform(get(LOCALITIES + "/99/workers").header("Authorization", token()))
                 .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void workersOfLocalityRequireToken() throws Exception {
-        mockMvc.perform(get(LOCALITIES + "/1/workers"))
-                .andExpect(status().isUnauthorized());
         verifyNoInteractions(localityService);
     }
 }

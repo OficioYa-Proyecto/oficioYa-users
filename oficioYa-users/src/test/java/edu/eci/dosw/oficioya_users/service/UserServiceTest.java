@@ -277,7 +277,7 @@ class UserServiceTest {
         assertThat(userService.updateOwnProfile(user.getId(), new UserUpdateDTO()).getName()).isEqualTo("Ana Pérez");
     }
 
-    // RF-14 zona de cobertura
+    // RF-14 localidad (solo del contratante)
 
     private static LocalityEntity locality(long id, String name) {
         LocalityEntity locality = new LocalityEntity();
@@ -311,8 +311,74 @@ class UserServiceTest {
     }
 
     @Test
-    void updateOwnProfileChangesLocality() {
+    void registerIgnoresLocalityWhenNotContractor() {
+        when(roleRepository.findByName("TRABAJADOR")).thenReturn(Optional.of(role("TRABAJADOR")));
+        saveReturnsArgument();
+        UserRequestDTO request = request(RoleName.TRABAJADOR);
+        request.setLocalityId(11L);
+
+        assertThat(userService.register(request).getLocality()).isNull();
+        verifyNoInteractions(localityRepository);
+    }
+
+    @Test
+    void updateOwnProfileRejectsLocalityForWorker() {
         UserEntity user = user(AccountStatus.ACTIVE, "TRABAJADOR");
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        UserUpdateDTO request = new UserUpdateDTO();
+        request.setLocalityId(8L);
+
+        assertStatus(() -> userService.updateOwnProfile(user.getId(), request), HttpStatus.FORBIDDEN);
+        verifyNoInteractions(localityRepository);
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void updateOwnProfileRejectsLocalityForAdmin() {
+        UserEntity admin = user(AccountStatus.ACTIVE, "ADMIN");
+        when(userRepository.findById(admin.getId())).thenReturn(Optional.of(admin));
+        UserUpdateDTO request = new UserUpdateDTO();
+        request.setLocalityId(8L);
+
+        assertStatus(() -> userService.updateOwnProfile(admin.getId(), request), HttpStatus.FORBIDDEN);
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void workerCanStillEditNameWithoutLocality() {
+        UserEntity user = user(AccountStatus.ACTIVE, "TRABAJADOR");
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        saveReturnsArgument();
+        UserUpdateDTO request = new UserUpdateDTO();
+        request.setName("Ana María");
+
+        assertThat(userService.updateOwnProfile(user.getId(), request).getName()).isEqualTo("Ana María");
+    }
+
+    @Test
+    void removeContractorRoleClearsLocality() {
+        UserEntity user = user(AccountStatus.ACTIVE, "TRABAJADOR", "CONTRATANTE");
+        user.setLocality(locality(11, "Suba"));
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        saveReturnsArgument();
+
+        assertThat(userService.removeRole(adminId, user.getId(), RoleName.CONTRATANTE).getLocality()).isNull();
+    }
+
+    @Test
+    void removeWorkerRoleKeepsLocality() {
+        UserEntity user = user(AccountStatus.ACTIVE, "TRABAJADOR", "CONTRATANTE");
+        user.setLocality(locality(11, "Suba"));
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(workerClient.findWorkerIdByUser(user.getId())).thenReturn(Optional.empty());
+        saveReturnsArgument();
+
+        assertThat(userService.removeRole(adminId, user.getId(), RoleName.TRABAJADOR).getLocality().name()).isEqualTo("Suba");
+    }
+
+    @Test
+    void updateOwnProfileChangesLocality() {
+        UserEntity user = user(AccountStatus.ACTIVE, "CONTRATANTE");
         user.setLocality(locality(11, "Suba"));
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(localityRepository.findById(8L)).thenReturn(Optional.of(locality(8, "Kennedy")));
@@ -710,7 +776,7 @@ class UserServiceTest {
         when(workerClient.findWorkerIdByUser(user.getId())).thenReturn(Optional.of("w-1"));
         saveReturnsArgument();
 
-        assertThat(userService.removeRole(user.getId(), RoleName.TRABAJADOR).getRoles())
+        assertThat(userService.removeRole(adminId, user.getId(), RoleName.TRABAJADOR).getRoles())
                 .containsExactly("CONTRATANTE");
         verify(workerClient).updateStatus("w-1", WorkerClient.PAUSED);
     }
@@ -722,7 +788,7 @@ class UserServiceTest {
         when(workerClient.findWorkerIdByUser(user.getId())).thenReturn(Optional.empty());
         saveReturnsArgument();
 
-        assertThat(userService.removeRole(user.getId(), RoleName.TRABAJADOR).getRoles())
+        assertThat(userService.removeRole(adminId, user.getId(), RoleName.TRABAJADOR).getRoles())
                 .containsExactly("CONTRATANTE");
         verify(workerClient, never()).updateStatus(any(), any());
     }
@@ -733,7 +799,7 @@ class UserServiceTest {
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         saveReturnsArgument();
 
-        assertThat(userService.removeRole(user.getId(), RoleName.CONTRATANTE).getRoles())
+        assertThat(userService.removeRole(adminId, user.getId(), RoleName.CONTRATANTE).getRoles())
                 .containsExactly("TRABAJADOR");
         verifyNoInteractions(workerClient);
     }
@@ -743,14 +809,66 @@ class UserServiceTest {
         UserEntity user = user(AccountStatus.ACTIVE, "TRABAJADOR");
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
-        assertStatus(() -> userService.removeRole(user.getId(), RoleName.TRABAJADOR), HttpStatus.CONFLICT);
+        assertStatus(() -> userService.removeRole(adminId, user.getId(), RoleName.TRABAJADOR), HttpStatus.CONFLICT);
         verifyNoInteractions(workerClient, requestsClient);
         verify(userRepository, never()).save(any());
     }
 
     @Test
+    void removeRoleReturns404WhenUserDoesNotExist() {
+        UUID id = UUID.randomUUID();
+        when(userRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertStatus(() -> userService.removeRole(adminId, id, RoleName.TRABAJADOR), HttpStatus.NOT_FOUND);
+        verifyNoInteractions(workerClient, requestsClient);
+    }
+
+    @Test
+    void removeRoleRejectsAdminAccount() {
+        UserEntity admin = user(AccountStatus.ACTIVE, "ADMIN");
+        when(userRepository.findById(admin.getId())).thenReturn(Optional.of(admin));
+
+        assertStatus(() -> userService.removeRole(adminId, admin.getId(), RoleName.TRABAJADOR), HttpStatus.FORBIDDEN);
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void removeRoleRejectsMissingRole() {
+        UserEntity user = user(AccountStatus.ACTIVE, "CONTRATANTE");
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+
+        assertStatus(() -> userService.removeRole(adminId, user.getId(), RoleName.TRABAJADOR), HttpStatus.CONFLICT);
+        verifyNoInteractions(workerClient, requestsClient);
+    }
+
+    @Test
+    void removeRoleAllowsInactiveAccountAndReturnsAdminView() {
+        UserEntity user = user(AccountStatus.INACTIVE, "TRABAJADOR", "CONTRATANTE");
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        saveReturnsArgument();
+
+        UserResponseDTO result = userService.removeRole(adminId, user.getId(), RoleName.CONTRATANTE);
+
+        assertThat(result.getRoles()).containsExactly("TRABAJADOR");
+        assertThat(result.getEmail()).isEqualTo("ana@mail.com");
+        assertThat(result.getAccountStatus()).isEqualTo(AccountStatus.INACTIVE);
+    }
+
+    @Test
+    void removeRoleConflictMessageTalksAboutTheAccount() {
+        UserEntity user = user(AccountStatus.ACTIVE, "TRABAJADOR", "CONTRATANTE");
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(requestsClient.countActive(user.getId(), RoleName.TRABAJADOR)).thenReturn(2L);
+
+        ApiException exception = assertThrows(ApiException.class,
+                () -> userService.removeRole(adminId, user.getId(), RoleName.TRABAJADOR));
+        assertThat(exception.getMessage()).isEqualTo("La cuenta tiene 2 solicitudes activas como TRABAJADOR; "
+                + "deben finalizarse o cancelarse antes de quitar el rol");
+    }
+
+    @Test
     void removeRoleRejectsAdminRole() {
-        assertStatus(() -> userService.removeRole(UUID.randomUUID(), RoleName.ADMIN), HttpStatus.BAD_REQUEST);
+        assertStatus(() -> userService.removeRole(adminId, UUID.randomUUID(), RoleName.ADMIN), HttpStatus.BAD_REQUEST);
         verifyNoInteractions(userRepository, workerClient, requestsClient);
     }
 
@@ -760,7 +878,7 @@ class UserServiceTest {
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(workerClient.findWorkerIdByUser(user.getId())).thenThrow(new ServiceUnavailableException("caído"));
 
-        assertStatus(() -> userService.removeRole(user.getId(), RoleName.TRABAJADOR), HttpStatus.SERVICE_UNAVAILABLE);
+        assertStatus(() -> userService.removeRole(adminId, user.getId(), RoleName.TRABAJADOR), HttpStatus.SERVICE_UNAVAILABLE);
         verify(userRepository, never()).save(any());
     }
 
@@ -770,7 +888,7 @@ class UserServiceTest {
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(requestsClient.countActive(user.getId(), RoleName.TRABAJADOR)).thenReturn(2L);
 
-        assertStatus(() -> userService.removeRole(user.getId(), RoleName.TRABAJADOR), HttpStatus.CONFLICT);
+        assertStatus(() -> userService.removeRole(adminId, user.getId(), RoleName.TRABAJADOR), HttpStatus.CONFLICT);
         verifyNoInteractions(workerClient);
         verify(userRepository, never()).save(any());
     }
@@ -782,7 +900,7 @@ class UserServiceTest {
         when(requestsClient.countActive(user.getId(), RoleName.CONTRATANTE))
                 .thenThrow(new ServiceUnavailableException("caído"));
 
-        assertStatus(() -> userService.removeRole(user.getId(), RoleName.CONTRATANTE), HttpStatus.SERVICE_UNAVAILABLE);
+        assertStatus(() -> userService.removeRole(adminId, user.getId(), RoleName.CONTRATANTE), HttpStatus.SERVICE_UNAVAILABLE);
         verifyNoInteractions(workerClient);
         verify(userRepository, never()).save(any());
     }
