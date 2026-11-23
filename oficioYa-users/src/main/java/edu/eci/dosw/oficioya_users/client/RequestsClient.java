@@ -12,7 +12,6 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 import java.time.Duration;
-import java.util.Map;
 import java.util.UUID;
 
 /** Integración con Servicios **/
@@ -26,7 +25,7 @@ public class RequestsClient {
 
     @Autowired
     public RequestsClient(RestClient.Builder builder,
-                        @Value("${workers.url:http://localhost:8081}") String url,
+                        @Value("${requests.url:http://localhost:8081}") String url,
                         @Value("${http.client.timeout-seconds:15}") long timeoutSeconds,
                         ServiceTokenProvider tokenProvider) {
         this(builder.baseUrl(url).requestFactory(timeoutFactory(Duration.ofSeconds(timeoutSeconds))).build(),

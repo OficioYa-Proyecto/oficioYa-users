@@ -437,19 +437,17 @@ class UserControllerTest {
     }
 
     @Test
+    void userCannotRemoveOwnRoleAnymore() throws Exception {
+        mockMvc.perform(delete("/api/v1/users/me/roles/TRABAJADOR").header(AUTH, token("TRABAJADOR", "CONTRATANTE")))
+                .andExpect(status().isMethodNotAllowed());
+    }
+
+    @Test
     void unexpectedErrorsReturn500WithoutDetails() throws Exception {
         when(userService.getOwnProfile(userId)).thenThrow(new IllegalStateException("detalle interno"));
 
         mockMvc.perform(get("/api/v1/users/me").header(AUTH, token("TRABAJADOR")))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.message").value("Error interno del servidor"));
-    }
-    @Test
-    void removeRoleReturnsUpdatedProfile() throws Exception {
-        when(userService.removeRole(userId, RoleName.TRABAJADOR)).thenReturn(response("Ana"));
-
-        mockMvc.perform(delete("/api/v1/users/me/roles/TRABAJADOR").header(AUTH, token("TRABAJADOR", "CONTRATANTE")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Ana"));
     }
 }

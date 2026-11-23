@@ -21,13 +21,6 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
     List<UserEntity> findByIdInAndAccountStatus(Collection<UUID> ids, AccountStatus status);
 
-    /** RF-14. Ids de las cuentas con ese rol y estado cuya zona de cobertura es esa localidad */
-    @Query("""
-            SELECT u.id FROM UserEntity u JOIN u.roles r
-            WHERE u.locality.id = :localityId AND r.name = :role AND u.accountStatus = :status""")
-    List<UUID> findIdsByLocalityAndRole(@Param("localityId") Long localityId, @Param("role") String role,
-                                        @Param("status") AccountStatus status);
-
     /** RF-12. Cuentas con alguno de esos roles creadas, estén activas o no */
     @Query("""
             SELECT COUNT(DISTINCT u) FROM UserEntity u JOIN u.roles r

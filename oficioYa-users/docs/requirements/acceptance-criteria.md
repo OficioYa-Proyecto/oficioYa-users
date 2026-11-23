@@ -160,36 +160,48 @@ Automatizado en `UserServiceTest`, `UserControllerTest` y `UserRepositoryTest`.
 
 Automatizado en `UserServiceTest`, `UserControllerTest`, `UserRepositoryTest` y `UserAcceptanceTest` (RF-12).
 
-## RF-13 Quitar un rol (`DELETE /api/v1/users/me/roles/{role}`)
+## RF-13 El administrador quita un rol (`DELETE /api/v1/admin/users/{id}/roles/{role}`, peticiones en `/api/v1/users/me/role-removal-requests` y `/api/v1/admin/role-removal-requests`)
 
-| #  | Dado                                                                                             | Cuando                      | Entonces                                                                                   |
-|----|--------------------------------------------------------------------------------------------------|-----------------------------|--------------------------------------------------------------------------------------------|
-| 1  | Un usuario con ambos roles y perfil en Worker                                                    | Quita el rol TRABAJADOR     | Recibe 200 con su perfil, que solo tiene CONTRATANTE, y su perfil en Worker queda `PAUSED` |
-| 2  | Un usuario con ambos roles sin perfil en Worker                                                  | Quita el rol TRABAJADOR     | Recibe 200 con su perfil, que solo tiene CONTRATANTE                                       |
-| 3  | Un usuario con ambos roles                                                                       | Quita el rol CONTRATANTE    | Recibe 200 con su perfil, que solo tiene TRABAJADOR; no se llama a Worker                  |
-| 4  | Un usuario con un solo rol                                                                       | Intenta quitarlo            | Recibe 409: la cuenta debe conservar al menos un rol                                       |
-| 5  | Un usuario sin el rol                                                                            | Intenta quitarlo            | Recibe 409                                                                                 |
-| 6  | Un usuario activo                                                                                | Intenta quitar el rol ADMIN | Recibe 400                                                                                 |
-| 7  | El administrador                                                                                 | Intenta quitarse un rol     | Recibe 403                                                                                 |
-| 8  | El microservicio Workers u Orquestador no responden o fallan                                     | Quita el rol TRABAJADOR     | Recibe 503 y conserva sus roles                                                            |
-| 9  | Un usuario con ambos roles y solicitudes activas (`PENDING`, `ACCEPTED` o `CONFLICT`) en ese rol | Intenta quitarlo            | Recibe 409 con el número de solicitudes activas; conserva sus roles y no se llama a Worker |
-| 10 | El microservicio Servicios u Orquestador no responden o fallan                                   | Quita un rol                | Recibe 503 y conserva sus roles; no se llama a Worker                                      |
+| #  | Dado | Cuando | Entonces |
+|----|------|--------|----------|
+| 1  | Un usuario con ambos roles | Pide quitar TRABAJADOR con una razón de 10 a 500 caracteres | Recibe 201 con la petición `PENDING`; sus roles no cambian |
+| 2  | Un usuario | Pide quitar un rol sin razón o con menos de 10 caracteres | Recibe 400 |
+| 3  | Un usuario | Pide quitar el rol ADMIN | Recibe 400 |
+| 4  | Un usuario con un solo rol o sin ese rol | Pide quitarlo | Recibe 409 |
+| 5  | Un usuario con una petición pendiente | Crea otra petición | Recibe 409 |
+| 6  | Una cuenta inactiva o de administrador | Pide quitar un rol | Recibe 403 |
+| 7  | Un usuario sin rol ADMIN | Intenta aprobar, rechazar o quitar un rol por los endpoints de admin | Recibe 403 |
+| 8  | Una petición pendiente de TRABAJADOR con perfil en Worker | El admin la aprueba con motivo | Recibe 200 `APPROVED`; la cuenta solo tiene CONTRATANTE y su perfil en Worker queda `PAUSED` |
+| 9  | Una petición pendiente | El admin la rechaza con motivo | Recibe 200 `REJECTED` con el motivo; la cuenta conserva sus roles |
+| 10 | Una petición ya resuelta | El admin intenta aprobarla o rechazarla | Recibe 409 |
+| 11 | Una petición pendiente y el usuario tiene solicitudes activas en ese rol | El admin la aprueba | Recibe 409 con el número de solicitudes activas; la petición sigue `PENDING` y no se llama a Worker |
+| 12 | Servicios, Worker u Orquestador no responden | El admin aprueba o quita un rol | Recibe 503; la cuenta conserva sus roles y la petición sigue `PENDING` |
+| 13 | Un usuario con ambos roles, sin petición | El admin quita CONTRATANTE desde el detalle (sin body) | Recibe 200 con la cuenta completa (vista de admin), que solo tiene TRABAJADOR |
+| 14 | Un usuario con una petición pendiente de ese rol | El admin quita el rol desde el detalle | La petición queda `APPROVED` con un motivo fijo |
+| 17 | Una cuenta inactiva con ambos roles | El admin le quita un rol | Recibe 200; la cuenta sigue inactiva |
+| 18 | Una cuenta que no existe | El admin intenta quitarle un rol | Recibe 404 |
+| 19 | Una cuenta de administrador | El admin intenta quitarle un rol | Recibe 403 |
+| 20 | Un usuario | Llama al endpoint viejo `DELETE /api/v1/users/me/roles/{role}` | Recibe 405 |
+| 15 | Un usuario con peticiones | Consulta sus peticiones | Recibe 200 con todas, las más recientes primero, con el estado y el motivo del admin |
+| 16 | El admin | Lista peticiones con `status=PENDING` (y opcional `userId`) | Recibe 200 solo con las pendientes |
 
 El token sigue trayendo el rol anterior hasta el próximo login; el front vuelve a iniciar sesión o refresca el token.
-Automatizado en `UserServiceTest`, `WorkerClientTest` y `RequestsClientTest` (Worker y Servicios simulado).
+Automatizado en `RoleRemovalServiceTest`, `RoleRemovalControllerTest`, `UserServiceTest` (reglas al quitar el rol), `WorkerClientTest` y `RequestsClientTest` (Worker y Servicios simulados).
 El token con el que se consulta el perfil en Worker (`GET /api/v1/workers/me`) lleva como `sub` el id del usuario; verificado en `WorkerClientTest`.
 
-## RF-14 Zona de cobertura (`GET /api/v1/localities`, `GET /api/v1/localities/{id}/workers`, `localityId` en registro y edición)
+## RF-14 Localidad del contratante (`GET /api/v1/localities`, `localityId` en registro y edición)
 
+| #  | Dado | Cuando | Entonces |
+|----|------|--------|----------|
+| 1  | — | Consulto el catálogo sin token | Recibo 200 con las 20 localidades de Bogotá ordenadas por id |
+| 2  | Un visitante con rol CONTRATANTE | Me registro con `localityId` de una localidad existente | Recibo 201 y mi perfil trae `locality: {id, name}` |
+| 3  | Un visitante solo con rol TRABAJADOR | Me registro con `localityId` | Recibo 201 y la cuenta queda sin localidad |
+| 4  | Un visitante | Me registro sin `localityId` | Recibo 201 sin localidad |
+| 5  | Un contratante | Me registro o edito mi perfil con un `localityId` inexistente | Recibo 400 y no se guarda nada |
+| 6  | Un contratante activo | Cambio mi `localityId` en `PATCH /users/me` | Recibo 200 con la nueva localidad |
+| 7  | Un trabajador (sin rol CONTRATANTE) o el administrador | Intento cambiar mi `localityId` | Recibo 403 y no se guarda nada; sí puedo editar nombre y teléfonos |
+| 8  | Un usuario con ambos roles y localidad | El administrador le quita el rol CONTRATANTE (RF-13) | La cuenta queda sin localidad |
+| 9  | Un usuario con ambos roles y localidad | El administrador le quita el rol TRABAJADOR (RF-13) | Conserva su localidad |
+| 10 | — | Consulto `GET /localities/{id}/workers` (se quitó porque el trabajador no tiene localidad) | Recibo 404 |
 
-| # | Dado                                  | Cuando                                                        | Entonces                                                                     |
-|---|---------------------------------------|---------------------------------------------------------------|------------------------------------------------------------------------------|
-| 1 | —                                     | Consulto el catálogo sin token                                | Recibo 200 con las 20 localidades de Bogotá ordenadas por id                 |
-| 2 | Un visitante                          | Me registro con `localityId` de una localidad existente       | Recibo 201 y mi perfil trae `locality: {id, name}`                           |
-| 3 | Un visitante                          | Me registro sin `localityId`                                  | Recibo 201 sin zona de cobertura                                             |
-| 4 | —                                     | Me registro o edito mi perfil con un `localityId` inexistente | Recibo 400 y no se guarda nada                                               |
-| 5 | Un usuario activo                     | Cambio mi `localityId` en `PATCH /users/me`                   | Recibo 200 con la nueva localidad; en `/users/me` se ve la zona de cobertura |
-| 6 | Trabajadores activos en una localidad | Worker consulta `/localities/{id}/workers` con token          | Recibe 200 con sus ids; no incluye cuentas inactivas ni contratantes         |
-| 7 | —                                     | Worker consulta una localidad inexistente                     | Recibe 404                                                                   |
-
-Automatizado en `UserServiceTest` y `LocalityServiceTest`.
+Automatizado en `UserServiceTest`, `LocalityServiceTest` y `UserAcceptanceTest` (RF-14).

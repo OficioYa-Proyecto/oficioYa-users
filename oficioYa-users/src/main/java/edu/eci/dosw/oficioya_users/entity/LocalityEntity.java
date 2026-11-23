@@ -7,7 +7,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
-/** RF-14. Localidad de Bogotá del catálogo de zonas de cobertura. Ids fijos (data.sql) porque otros microservicios los usan */
+/** RF-14. Localidad de Bogotá del catálogo de localidades. Ids fijos (data.sql) porque otros microservicios los usan */
 @Getter
 @Setter
 @Entity

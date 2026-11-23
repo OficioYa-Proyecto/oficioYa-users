@@ -309,6 +309,58 @@ class UserAcceptanceTest {
         }
     }
 
+    // RF-14
+
+    @Nested
+    @DisplayName("RF-14 Localidad del contratante")
+    class Locality {
+
+        @Test
+        @DisplayName("Dado un contratante, cuando cambia su localidad, entonces queda guardada")
+        void contractorChangesLocality() throws Exception {
+            UUID id = register("Marta", "marta.rf14@mail.com", "CONTRATANTE");
+
+            mockMvc.perform(json(patch(ME).header(AUTH, token(id, "CONTRATANTE")), "{\"localityId\":2}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.locality.id").value(2))
+                    .andExpect(jsonPath("$.locality.name").value("Chapinero"));
+        }
+
+        @Test
+        @DisplayName("Dado un trabajador, cuando intenta cambiar su localidad, entonces recibe 403 y no se guarda")
+        void workerCannotChangeLocality() throws Exception {
+            UUID id = register("Pedro", "pedro.rf14@mail.com", "TRABAJADOR");
+
+            mockMvc.perform(json(patch(ME).header(AUTH, token(id, "TRABAJADOR")), "{\"localityId\":2}"))
+                    .andExpect(status().isForbidden());
+
+            mockMvc.perform(get(ADMIN_USERS + "/" + id).header(AUTH, token(adminId, "ADMIN")))
+                    .andExpect(jsonPath("$.locality").doesNotExist());
+        }
+
+        @Test
+        @DisplayName("Dado un trabajador que se registra con localidad, entonces la cuenta se crea sin localidad")
+        void workerRegistersWithoutLocality() throws Exception {
+            String body = registerBody("Sofía", "sofia.rf14@mail.com", "TRABAJADOR")
+                    .replace("\"roles\"", "\"localityId\":3,\"roles\"");
+
+            mockMvc.perform(registerRequest(body))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.locality").doesNotExist());
+        }
+
+        @Test
+        @DisplayName("Dado un contratante que se registra con localidad, entonces la cuenta queda con esa localidad")
+        void contractorRegistersWithLocality() throws Exception {
+            String body = registerBody("Julia", "julia.rf14@mail.com", "CONTRATANTE")
+                    .replace("\"roles\"", "\"localityId\":3,\"roles\"");
+
+            mockMvc.perform(registerRequest(body))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.locality.id").value(3));
+        }
+    }
+
     // RF-05
 
     @Nested
