@@ -140,7 +140,7 @@ class UserServiceTest {
         UserResponseDTO result = userService.register(request(RoleName.TRABAJADOR));
 
         assertThat(result.getName()).isEqualTo("Ana Pérez");
-        assertThat(result.getEmail()).isEqualTo("*****@mail.com");
+        assertThat(result.getEmail()).isEqualTo("a**a@mail.com");
         assertThat(result.getPhones().get(0).getNumber()).isEqualTo("******4567");
         assertThat(result.getRoles()).containsExactly("TRABAJADOR");
         assertThat(result.getAccountStatus()).isEqualTo(AccountStatus.ACTIVE);
@@ -234,7 +234,7 @@ class UserServiceTest {
         UserEntity user = user(AccountStatus.ACTIVE, "CONTRATANTE");
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
-        assertThat(userService.getOwnProfile(user.getId()).getEmail()).isEqualTo("*****@mail.com");
+        assertThat(userService.getOwnProfile(user.getId()).getEmail()).isEqualTo("a**a@mail.com");
     }
 
     @Test

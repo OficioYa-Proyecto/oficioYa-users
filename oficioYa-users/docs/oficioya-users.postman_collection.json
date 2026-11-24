@@ -22,7 +22,7 @@
                   "pm.test('Responde 201', () => pm.response.to.have.status(201));",
                   "const res = pm.response.json();",
                   "pm.collectionVariables.set('userId', res.id);",
-                  "pm.test('Correo enmascarado', () => pm.expect(res.email).to.match(/^\\*{5}@/));",
+                  "pm.test('Correo enmascarado', () => pm.expect(res.email).to.match(/^[^*]\\*\\*[^*]?@/));",
                   "pm.test('Guarda la fecha de nacimiento (RF-01)', () => pm.expect(res.birthDate).to.eql('1995-05-20'));",
                   "pm.test('Guarda la localidad del trabajador (RF-14)', () => pm.expect(res.locality.id).to.eql(1));"
                 ]

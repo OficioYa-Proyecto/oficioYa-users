@@ -100,7 +100,7 @@ class UserAcceptanceTest {
                     .andExpect(jsonPath("$.name").value("Ana"))
                     .andExpect(jsonPath("$.accountStatus").value("ACTIVE"))
                     .andExpect(jsonPath("$.roles", containsInAnyOrder("CONTRATANTE")))
-                    .andExpect(jsonPath("$.email").value("*****@mail.com"));
+                    .andExpect(jsonPath("$.email").value("a**1@mail.com"));
         }
 
         @Test
@@ -261,7 +261,7 @@ class UserAcceptanceTest {
             mockMvc.perform(get(ME).header(AUTH, token(id, "TRABAJADOR")))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.name").value("Marta"))
-                    .andExpect(jsonPath("$.email").value("*****@mail.com"))
+                    .andExpect(jsonPath("$.email").value("m**3@mail.com"))
                     .andExpect(jsonPath("$.phones[0].number").value("******4567"))
                     .andExpect(jsonPath("$.phones[0].principal").value(true))
                     .andExpect(jsonPath("$.accountStatus").value("ACTIVE"));

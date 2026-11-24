@@ -57,7 +57,7 @@ Documentación de los endpoints en Swagger (`/swagger-ui.html`):
 
 | # | Dado | Cuando | Entonces |
 |---|------|--------|----------|
-| 1 | Un usuario activo | Consulta su perfil | Ve sus datos con correo (`*****@mail.com`) y teléfono (`******4567`) enmascarados |
+| 1 | Un usuario activo | Consulta su perfil | Ve sus datos con correo (`a**a@mail.com`) y teléfono (`******4567`) enmascarados |
 | 2 | — | Consulta el perfil sin token | Recibe 401 |
 
 ## RF-04 Editar perfil propio (`PATCH /api/v1/users/me`)
