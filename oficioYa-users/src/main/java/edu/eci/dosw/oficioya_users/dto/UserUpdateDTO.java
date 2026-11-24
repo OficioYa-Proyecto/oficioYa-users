@@ -13,7 +13,7 @@ public class UserUpdateDTO {
     @Pattern(regexp = "\\s*\\S.*", message = "El nombre no puede estar vacío")
     private String name;
 
-    /** RF-14. Localidad (id del catálogo); solo la puede cambiar el contratante */
+    /** RF-14. Localidad (id del catálogo); la cambian el trabajador y el contratante, no el admin */
     private Long localityId;
 
     @Size(min = 1, max = 3, message = "Debe tener entre 1 y 3 teléfonos")

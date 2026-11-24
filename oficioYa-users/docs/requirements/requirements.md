@@ -21,7 +21,7 @@ El sistema de OficioYa debe tener la capacidad de:
 11. Otros microservicios pueden consultar una cuenta de un usuario, ya sea por correo u id y su estado (activa o inactiva)
 12. El administrador, a través del microservicio de Reporting, consulta cuántas cuentas hay registradas y cuántas se desactivaron en un periodo, en total y por rol
 13. Un usuario puede pedir que le quiten el rol de trabajador o de contratante escribiendo la razón; solo el administrador quita el rol (aprobando la petición o directamente), siempre que la cuenta conserve al menos un rol y no tenga solicitudes activas en ese rol
-14. El contratante tiene una localidad de Bogotá que solo él puede elegir y cambiar; si deja de ser contratante, la localidad queda vacía
+14. El trabajador y el contratante tienen una localidad de Bogotá que pueden elegir y cambiar; el administrador no tiene localidad
 
 ### 1.2 Requerimientos no funcionales
 
@@ -208,16 +208,16 @@ Los criterios de aceptación de cada requerimiento funcional están en [Criterio
 | **Flujo principal** | 1. El usuario ingresa a su cuenta y pulsa "Quiero dejar de ser trabajador" (o contratante)<br/>2. Escribe la razón (10 a 500 caracteres) y envía la petición<br/>3. El sistema valida que tenga el rol, que no sea el único y que no tenga otra petición pendiente, y la guarda como `PENDING`<br/>4. El administrador ve la petición en la bandeja de peticiones o en el detalle de la cuenta<br/>5. El administrador la aprueba con un motivo (o quita el rol directamente desde el detalle, aunque no haya petición)<br/>6. El sistema consulta a Servicios, a través del Orquestador, cuántas solicitudes activas tiene en ese rol y continúa solo si son 0<br/>7. Si es el rol de trabajador, el sistema consulta a Worker a través del Orquestador su perfil, con un token SERVICE a nombre del usuario y, si existe, lo pausa<br/>8. El sistema quita el rol y marca la petición como `APPROVED`<br/>9. El usuario ve el resultado en su perfil y vuelve a iniciar sesión para que el token traiga sus roles actuales |
 | **Flujos alternos** | *El administrador rechaza la petición con un motivo: queda `REJECTED`, el usuario ve el motivo y conserva sus roles. Si al aprobar hay solicitudes activas o Servicios/Worker no responden, la petición sigue `PENDING`* |
 | **Diagrama de caso de uso** | ![Diagrama RF-13](../uml/delete_role.png) |
-| **Poscondiciones** | *La cuenta conserva solo el otro rol y la petición queda resuelta con el motivo del administrador y la fecha. Si quitó el rol de trabajador, su perfil en Worker queda pausado y se reactiva si vuelve a agregar el rol (RF-02); si quitó el de contratante, su localidad queda vacía (RF-14). Riesgo conocido: si Worker pausa el perfil y después falla el guardado en este microservicio, el perfil queda pausado aunque la cuenta conserve el rol; para la entrega solo se documenta* |
+| **Poscondiciones** | *La cuenta conserva solo el otro rol y la petición queda resuelta con el motivo del administrador y la fecha. Si quitó el rol de trabajador, su perfil en Worker queda pausado y se reactiva si vuelve a agregar el rol (RF-02); la localidad se conserva (RF-14). Riesgo conocido: si Worker pausa el perfil y después falla el guardado en este microservicio, el perfil queda pausado aunque la cuenta conserve el rol; para la entrega solo se documenta* |
 
 ### 2.14 Requerimiento Funcional 14
 
 | Campo                        | Descripción |
 |------------------------------|-------------|
 | **ID** | RF-14 |
-| **Nombre del requerimiento** | Localidad del contratante |
-| **Descripción** | *El sistema debe ofrecer el catálogo de localidades de Bogotá (`GET /api/v1/localities`, público) y permitir que el contratante tenga una localidad, elegida al registrarse (`localityId` en `POST /api/v1/users`) o al editar su perfil (`PATCH /api/v1/users/me`). Solo el contratante puede tener y cambiar su localidad: si la cuenta no tiene rol CONTRATANTE, en el registro no se guarda y en la edición se responde 403 (aplica al trabajador y al administrador). Si se le quita el rol CONTRATANTE (RF-13), la localidad queda vacía. La localidad viaja en las respuestas de perfil (`locality: {id, name}`). No se ofrece consulta de trabajadores por localidad, porque el trabajador no tiene localidad: Worker ubica a sus trabajadores por barrio (`GET /api/v1/zones`, que trae la localidad de cada barrio)* |
-| **Precondiciones** | *Para elegirla o cambiarla, la cuenta está Activa y tiene rol CONTRATANTE* |
-| **Actor** | *Contratante, Orquestador* |
-| **Flujo principal** | 1. El contratante elige una localidad del catálogo en el registro o en Editar perfil<br/>2. El sistema valida que la cuenta tenga rol CONTRATANTE; si no, en el registro la ignora y en la edición responde 403<br/>3. El sistema valida que la localidad exista; si no, responde 400<br/>4. El sistema guarda la localidad |
-| **Poscondiciones** | *El contratante tiene a lo sumo una localidad; se puede cambiar pero no dejar vacía. Quien no es contratante no tiene localidad. El catálogo no cambia* |
+| **Nombre del requerimiento** | Localidad del trabajador y del contratante |
+| **Descripción** | *El sistema debe ofrecer el catálogo de localidades de Bogotá (`GET /api/v1/localities`, público, ordenado alfabéticamente) y permitir que el trabajador y el contratante tengan una localidad, elegida al registrarse (`localityId` en `POST /api/v1/users`) o al editar su perfil (`PATCH /api/v1/users/me`). El administrador no tiene localidad: si intenta cambiarla se responde 403. Al quitar un rol (RF-13) la localidad se conserva. La localidad viaja en las respuestas de perfil y en las consultas del Orquestador (`locality: {id, name}`), para que pueda consultar la localidad de cualquier trabajador o contratante. No se ofrece consulta de trabajadores por localidad: Worker ubica a sus trabajadores por barrio (`GET /api/v1/zones`, que trae la localidad de cada barrio)* |
+| **Precondiciones** | *Para cambiarla, la cuenta está Activa y no es de administrador* |
+| **Actor** | *Trabajador, Contratante, Orquestador* |
+| **Flujo principal** | 1. El trabajador o contratante elige una localidad del catálogo en el registro o en Editar perfil<br/>2. En la edición, el sistema valida que la cuenta no sea de administrador; si lo es, responde 403<br/>3. El sistema valida que la localidad exista; si no, responde 400<br/>4. El sistema guarda la localidad |
+| **Poscondiciones** | *El trabajador o contratante tiene a lo sumo una localidad; se puede cambiar pero no dejar vacía. El administrador no tiene localidad. El catálogo no cambia* |

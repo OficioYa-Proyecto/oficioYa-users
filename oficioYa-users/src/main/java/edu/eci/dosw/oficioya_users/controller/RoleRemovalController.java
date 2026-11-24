@@ -67,7 +67,7 @@ public class RoleRemovalController {
     @DeleteMapping("/admin/users/{id}/roles/{role}")
     @Operation(summary = "Quitar rol (admin)", description = "RF-13. Quita TRABAJADOR o CONTRATANTE de una cuenta, activa o inactiva, "
             + "sin body. Si había una petición pendiente para ese rol queda aprobada. Al quitar TRABAJADOR pausa su perfil en Worker "
-            + "y al quitar CONTRATANTE la localidad queda vacía. 400 si piden ADMIN, 403 si quien llama no es admin o la cuenta es de admin, "
+            + "y la localidad se conserva. 400 si piden ADMIN, 403 si quien llama no es admin o la cuenta es de admin, "
             + "404 si la cuenta no existe, 409 si no tiene el rol, es el único o tiene solicitudes activas en ese rol, "
             + "503 si Servicios o Worker no responden")
     public UserResponseDTO removeRole(@AuthenticationPrincipal UUID adminId, @PathVariable UUID id,

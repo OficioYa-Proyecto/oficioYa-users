@@ -27,7 +27,7 @@ class LocalityServiceTest {
         LocalityEntity suba = new LocalityEntity();
         suba.setId(11L);
         suba.setName("Suba");
-        when(localityRepository.findAllByOrderByIdAsc()).thenReturn(List.of(suba));
+        when(localityRepository.findAllByOrderByNameAsc()).thenReturn(List.of(suba));
 
         assertThat(localityService.findAll()).containsExactly(new LocalityDTO(11L, "Suba"));
     }

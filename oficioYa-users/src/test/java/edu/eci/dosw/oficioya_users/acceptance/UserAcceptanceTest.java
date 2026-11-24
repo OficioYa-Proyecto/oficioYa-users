@@ -312,7 +312,7 @@ class UserAcceptanceTest {
     // RF-14
 
     @Nested
-    @DisplayName("RF-14 Localidad del contratante")
+    @DisplayName("RF-14 Localidad del trabajador y del contratante")
     class Locality {
 
         @Test
@@ -327,26 +327,24 @@ class UserAcceptanceTest {
         }
 
         @Test
-        @DisplayName("Dado un trabajador, cuando intenta cambiar su localidad, entonces recibe 403 y no se guarda")
-        void workerCannotChangeLocality() throws Exception {
+        @DisplayName("Dado un trabajador, cuando cambia su localidad, entonces queda guardada")
+        void workerChangesLocality() throws Exception {
             UUID id = register("Pedro", "pedro.rf14@mail.com", "TRABAJADOR");
 
             mockMvc.perform(json(patch(ME).header(AUTH, token(id, "TRABAJADOR")), "{\"localityId\":2}"))
-                    .andExpect(status().isForbidden());
-
-            mockMvc.perform(get(ADMIN_USERS + "/" + id).header(AUTH, token(adminId, "ADMIN")))
-                    .andExpect(jsonPath("$.locality").doesNotExist());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.locality.id").value(2));
         }
 
         @Test
-        @DisplayName("Dado un trabajador que se registra con localidad, entonces la cuenta se crea sin localidad")
-        void workerRegistersWithoutLocality() throws Exception {
+        @DisplayName("Dado un trabajador que se registra con localidad, entonces la cuenta queda con esa localidad")
+        void workerRegistersWithLocality() throws Exception {
             String body = registerBody("Sofía", "sofia.rf14@mail.com", "TRABAJADOR")
                     .replace("\"roles\"", "\"localityId\":3,\"roles\"");
 
             mockMvc.perform(registerRequest(body))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.locality").doesNotExist());
+                    .andExpect(jsonPath("$.locality.id").value(3));
         }
 
         @Test

@@ -14,7 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/localities")
 @RequiredArgsConstructor
-@Tag(name = "Localidades", description = "Catálogo de localidades de Bogotá (localidad del contratante)")
+@Tag(name = "Localidades", description = "Catálogo de localidades de Bogotá (localidad del trabajador y del contratante)")
 public class LocalityController {
 
     private final LocalityService localityService;

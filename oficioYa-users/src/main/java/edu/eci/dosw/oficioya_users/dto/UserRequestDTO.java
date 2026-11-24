@@ -30,7 +30,7 @@ public class UserRequestDTO {
     @Past(message = "La fecha de nacimiento debe ser anterior a hoy")
     private LocalDate birthDate;
 
-    /** RF-14. Localidad (id del catálogo); opcional, solo se guarda si es contratante */
+    /** RF-14. Localidad (id del catálogo); opcional */
     private Long localityId;
 
     @NotEmpty(message = "Debe registrar al menos un teléfono")

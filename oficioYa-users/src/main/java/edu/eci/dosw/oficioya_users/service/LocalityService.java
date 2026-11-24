@@ -15,9 +15,9 @@ public class LocalityService {
 
     private final LocalityRepository localityRepository;
 
-    /** RF-14. Catálogo de localidades, ordenado por id */
+    /** RF-14. Catálogo de localidades, ordenado alfabéticamente */
     public List<LocalityDTO> findAll() {
-        return localityRepository.findAllByOrderByIdAsc().stream()
+        return localityRepository.findAllByOrderByNameAsc().stream()
                 .map(locality -> new LocalityDTO(locality.getId(), locality.getName()))
                 .toList();
     }
