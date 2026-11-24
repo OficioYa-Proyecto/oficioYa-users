@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
@@ -100,7 +101,7 @@ class UserAcceptanceTest {
                     .andExpect(jsonPath("$.name").value("Ana"))
                     .andExpect(jsonPath("$.accountStatus").value("ACTIVE"))
                     .andExpect(jsonPath("$.roles", containsInAnyOrder("CONTRATANTE")))
-                    .andExpect(jsonPath("$.email").value("*****@mail.com"));
+                    .andExpect(jsonPath("$.email").value("a**1@mail.com"));
         }
 
         @Test
@@ -139,7 +140,7 @@ class UserAcceptanceTest {
         @DisplayName("Cuando me registro con dos teléfonos principales, entonces recibo 400")
         void rejectsTwoPrincipalPhones() throws Exception {
             String body = """
-                    {"name":"Juan","email":"juan.rf01@mail.com","birthDate":"1995-05-20",
+                    {"name":"Juan","email":"juan.rf01@mail.com","birthDate":"1995-05-20","localityId":1,
                      "phones":[{"number":"3001111111","principal":true},{"number":"3002222222","principal":true}],
                      "roles":["TRABAJADOR"]}""";
 
@@ -150,7 +151,7 @@ class UserAcceptanceTest {
         @DisplayName("Cuando me registro con más de tres teléfonos o datos inválidos, entonces recibo 400")
         void rejectsInvalidData() throws Exception {
             String tooManyPhones = """
-                    {"name":"Juan","email":"juan2.rf01@mail.com","birthDate":"1995-05-20",
+                    {"name":"Juan","email":"juan2.rf01@mail.com","birthDate":"1995-05-20","localityId":1,
                      "phones":[{"number":"3001111111","principal":true},{"number":"3002222222","principal":false},
                                {"number":"3003333333","principal":false},{"number":"3004444444","principal":false}],
                      "roles":["TRABAJADOR"]}""";
@@ -164,7 +165,7 @@ class UserAcceptanceTest {
         @DisplayName("Dado que soy mayor de edad, cuando me registro con mi fecha de nacimiento, entonces queda guardada en mi cuenta")
         void registersAdultWithBirthDate() throws Exception {
             String body = """
-                    {"name":"Sara","email":"sara.rf01@mail.com","birthDate":"1995-05-20",
+                    {"name":"Sara","email":"sara.rf01@mail.com","birthDate":"1995-05-20","localityId":1,
                      "phones":[{"number":"3005555555","principal":true}],"roles":["CONTRATANTE"]}""";
 
             mockMvc.perform(registerRequest(body))
@@ -176,7 +177,7 @@ class UserAcceptanceTest {
         @DisplayName("Cuando me registro sin fecha de nacimiento, entonces recibo 400")
         void rejectsMissingBirthDate() throws Exception {
             String body = """
-                    {"name":"Leo","email":"sinfecha.rf01@mail.com",
+                    {"name":"Leo","email":"sinfecha.rf01@mail.com","localityId":1,
                      "phones":[{"number":"3007777777","principal":true}],"roles":["CONTRATANTE"]}""";
 
             mockMvc.perform(registerRequest(body)).andExpect(status().isBadRequest());
@@ -188,7 +189,7 @@ class UserAcceptanceTest {
             String minor = java.time.LocalDate.now(java.time.ZoneId.of("America/Bogota")).minusYears(17).toString();
             for (String date : new String[]{minor, "2999-01-01"}) {
                 String body = """
-                        {"name":"Leo","email":"leo.rf01@mail.com","birthDate":"%s",
+                        {"name":"Leo","email":"leo.rf01@mail.com","birthDate":"%s","localityId":1,
                          "phones":[{"number":"3006666666","principal":true}],"roles":["CONTRATANTE"]}""".formatted(date);
                 mockMvc.perform(registerRequest(body)).andExpect(status().isBadRequest());
             }
@@ -261,7 +262,7 @@ class UserAcceptanceTest {
             mockMvc.perform(get(ME).header(AUTH, token(id, "TRABAJADOR")))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.name").value("Marta"))
-                    .andExpect(jsonPath("$.email").value("*****@mail.com"))
+                    .andExpect(jsonPath("$.email").value("m**3@mail.com"))
                     .andExpect(jsonPath("$.phones[0].number").value("******4567"))
                     .andExpect(jsonPath("$.phones[0].principal").value(true))
                     .andExpect(jsonPath("$.accountStatus").value("ACTIVE"));
@@ -312,7 +313,7 @@ class UserAcceptanceTest {
     // RF-14
 
     @Nested
-    @DisplayName("RF-14 Localidad del contratante")
+    @DisplayName("RF-14 Localidad del trabajador y del contratante")
     class Locality {
 
         @Test
@@ -327,33 +328,39 @@ class UserAcceptanceTest {
         }
 
         @Test
-        @DisplayName("Dado un trabajador, cuando intenta cambiar su localidad, entonces recibe 403 y no se guarda")
-        void workerCannotChangeLocality() throws Exception {
+        @DisplayName("Dado un trabajador, cuando cambia su localidad, entonces queda guardada")
+        void workerChangesLocality() throws Exception {
             UUID id = register("Pedro", "pedro.rf14@mail.com", "TRABAJADOR");
 
             mockMvc.perform(json(patch(ME).header(AUTH, token(id, "TRABAJADOR")), "{\"localityId\":2}"))
-                    .andExpect(status().isForbidden());
-
-            mockMvc.perform(get(ADMIN_USERS + "/" + id).header(AUTH, token(adminId, "ADMIN")))
-                    .andExpect(jsonPath("$.locality").doesNotExist());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.locality.id").value(2));
         }
 
         @Test
-        @DisplayName("Dado un trabajador que se registra con localidad, entonces la cuenta se crea sin localidad")
-        void workerRegistersWithoutLocality() throws Exception {
+        @DisplayName("Dado un trabajador que se registra con localidad, entonces la cuenta queda con esa localidad")
+        void workerRegistersWithLocality() throws Exception {
             String body = registerBody("Sofía", "sofia.rf14@mail.com", "TRABAJADOR")
-                    .replace("\"roles\"", "\"localityId\":3,\"roles\"");
+                    .replace("\"localityId\":1", "\"localityId\":3");
 
             mockMvc.perform(registerRequest(body))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.locality").doesNotExist());
+                    .andExpect(jsonPath("$.locality.id").value(3));
+        }
+
+        @Test
+        @DisplayName("Cuando me registro sin localidad, entonces recibo 400")
+        void rejectsMissingLocality() throws Exception {
+            String body = registerBody("Tomás", "tomas.rf14@mail.com", "CONTRATANTE").replace("\"localityId\":1,", "");
+
+            mockMvc.perform(registerRequest(body)).andExpect(status().isBadRequest());
         }
 
         @Test
         @DisplayName("Dado un contratante que se registra con localidad, entonces la cuenta queda con esa localidad")
         void contractorRegistersWithLocality() throws Exception {
             String body = registerBody("Julia", "julia.rf14@mail.com", "CONTRATANTE")
-                    .replace("\"roles\"", "\"localityId\":3,\"roles\"");
+                    .replace("\"localityId\":1", "\"localityId\":3");
 
             mockMvc.perform(registerRequest(body))
                     .andExpect(status().isCreated())
@@ -688,7 +695,7 @@ class UserAcceptanceTest {
     private static String registerBody(String name, String email, String... roles) {
         String roleList = String.join("\",\"", roles);
         return """
-                {"name":"%s","email":"%s","birthDate":"1995-05-20","phones":[{"number":"3001234567","principal":true}],"roles":["%s"]}"""
+                {"name":"%s","email":"%s","birthDate":"1995-05-20","localityId":1,"phones":[{"number":"3001234567","principal":true}],"roles":["%s"]}"""
                 .formatted(name, email, roleList);
     }
 

@@ -72,8 +72,12 @@ public class UserMapper {
         return dto;
     }
 
+    /** Primera y última letra antes de la @ visibles: carlos@gmail.com -> c**s@gmail.com */
     static String maskEmail(String email) {
-        return "*****" + email.substring(email.indexOf('@'));
+        int at = email.indexOf('@');
+        String user = email.substring(0, at);
+        String last = user.length() > 1 ? user.substring(user.length() - 1) : "";
+        return user.charAt(0) + "**" + last + email.substring(at);
     }
 
     static String maskPhone(String number) {

@@ -140,7 +140,7 @@ class UserServiceTest {
         UserResponseDTO result = userService.register(request(RoleName.TRABAJADOR));
 
         assertThat(result.getName()).isEqualTo("Ana Pérez");
-        assertThat(result.getEmail()).isEqualTo("*****@mail.com");
+        assertThat(result.getEmail()).isEqualTo("a**a@mail.com");
         assertThat(result.getPhones().get(0).getNumber()).isEqualTo("******4567");
         assertThat(result.getRoles()).containsExactly("TRABAJADOR");
         assertThat(result.getAccountStatus()).isEqualTo(AccountStatus.ACTIVE);
@@ -234,7 +234,7 @@ class UserServiceTest {
         UserEntity user = user(AccountStatus.ACTIVE, "CONTRATANTE");
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
-        assertThat(userService.getOwnProfile(user.getId()).getEmail()).isEqualTo("*****@mail.com");
+        assertThat(userService.getOwnProfile(user.getId()).getEmail()).isEqualTo("a**a@mail.com");
     }
 
     @Test
@@ -277,7 +277,7 @@ class UserServiceTest {
         assertThat(userService.updateOwnProfile(user.getId(), new UserUpdateDTO()).getName()).isEqualTo("Ana Pérez");
     }
 
-    // RF-14 localidad (solo del contratante)
+    // RF-14 localidad (trabajador y contratante, no admin)
 
     private static LocalityEntity locality(long id, String name) {
         LocalityEntity locality = new LocalityEntity();
@@ -311,26 +311,26 @@ class UserServiceTest {
     }
 
     @Test
-    void registerIgnoresLocalityWhenNotContractor() {
+    void registerSavesLocalityForWorker() {
         when(roleRepository.findByName("TRABAJADOR")).thenReturn(Optional.of(role("TRABAJADOR")));
+        when(localityRepository.findById(11L)).thenReturn(Optional.of(locality(11, "Suba")));
         saveReturnsArgument();
         UserRequestDTO request = request(RoleName.TRABAJADOR);
         request.setLocalityId(11L);
 
-        assertThat(userService.register(request).getLocality()).isNull();
-        verifyNoInteractions(localityRepository);
+        assertThat(userService.register(request).getLocality().name()).isEqualTo("Suba");
     }
 
     @Test
-    void updateOwnProfileRejectsLocalityForWorker() {
+    void updateOwnProfileChangesLocalityForWorker() {
         UserEntity user = user(AccountStatus.ACTIVE, "TRABAJADOR");
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(localityRepository.findById(8L)).thenReturn(Optional.of(locality(8, "Kennedy")));
+        saveReturnsArgument();
         UserUpdateDTO request = new UserUpdateDTO();
         request.setLocalityId(8L);
 
-        assertStatus(() -> userService.updateOwnProfile(user.getId(), request), HttpStatus.FORBIDDEN);
-        verifyNoInteractions(localityRepository);
-        verify(userRepository, never()).save(any());
+        assertThat(userService.updateOwnProfile(user.getId(), request).getLocality().name()).isEqualTo("Kennedy");
     }
 
     @Test
@@ -356,13 +356,13 @@ class UserServiceTest {
     }
 
     @Test
-    void removeContractorRoleClearsLocality() {
+    void removeContractorRoleKeepsLocality() {
         UserEntity user = user(AccountStatus.ACTIVE, "TRABAJADOR", "CONTRATANTE");
         user.setLocality(locality(11, "Suba"));
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         saveReturnsArgument();
 
-        assertThat(userService.removeRole(adminId, user.getId(), RoleName.CONTRATANTE).getLocality()).isNull();
+        assertThat(userService.removeRole(adminId, user.getId(), RoleName.CONTRATANTE).getLocality().name()).isEqualTo("Suba");
     }
 
     @Test

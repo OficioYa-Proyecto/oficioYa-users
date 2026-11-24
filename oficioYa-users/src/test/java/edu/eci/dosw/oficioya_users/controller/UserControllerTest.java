@@ -47,7 +47,7 @@ class UserControllerTest {
     private static final String AUTH = "Authorization";
     private static final String STATS = "/api/v1/users/stats/accounts";
     private static final String REGISTER_BODY = """
-            {"name":"Ana","email":"ana@mail.com","birthDate":"1995-05-20",
+            {"name":"Ana","email":"ana@mail.com","birthDate":"1995-05-20","localityId":1,
              "phones":[{"number":"3001234567","principal":true}],"roles":["TRABAJADOR"]}""";
 
     @Autowired

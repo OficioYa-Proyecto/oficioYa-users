@@ -13,7 +13,7 @@ Por lo tanto, debe llevar a cabo qué campos de visualización debe tener el reg
 * Perfil propio, edición del perfil, teléfonos (máximo 3, uno principal) y perfil público de otros usuarios.
 * Agregar el rol que falta. Para quitar un rol, el usuario lo pide con una razón y el administrador aprueba o rechaza la petición (o lo quita directamente), siempre que la cuenta conserve al menos un rol y no tenga solicitudes activas en ese rol.
 * Administración: consulta de cuentas, desactivación y reactivación con motivo.
-* Catálogo de zonas (barrios) y de localidades de Bogotá. La localidad es solo del contratante: solo él la elige o la cambia, y queda vacía si deja de ser contratante.
+* Catálogo de zonas (barrios) y de localidades de Bogotá (ordenado alfabéticamente). El trabajador y el contratante pueden elegir y cambiar su localidad; el administrador no tiene localidad.
 * Consultas para otros microservicios (Identity, Worker, Requests, Reporting).
 
 Los requerimientos y criterios de aceptación completos están en [requirements.md](oficioYa-users/docs/requirements/requirements.md) y [acceptance-criteria.md](oficioYa-users/docs/requirements/acceptance-criteria.md).

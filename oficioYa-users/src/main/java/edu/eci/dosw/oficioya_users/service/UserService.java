@@ -76,8 +76,7 @@ public class UserService {
         user.setName(request.getName().trim());
         user.setEmail(email);
         user.setBirthDate(request.getBirthDate());
-        // RF-14. Solo el contratante tiene localidad; si no lo es, no se guarda
-        if (request.getLocalityId() != null && request.getRoles().contains(RoleName.CONTRATANTE)) {
+        if (request.getLocalityId() != null) {
             user.setLocality(findLocality(request.getLocalityId()));
         }
         user.setAccountStatus(AccountStatus.ACTIVE);
@@ -138,10 +137,6 @@ public class UserService {
             changeWorkerStatus(userId, WorkerClient.PAUSED);
         }
         user.getRoles().removeIf(role -> role.getName().equals(roleName.name()));
-        // RF-14. La localidad es solo del contratante: al quitarle ese rol queda vacía
-        if (roleName == RoleName.CONTRATANTE) {
-            user.setLocality(null);
-        }
         log.info("Admin {} quitó el rol {} de la cuenta {}", adminId, roleName, userId);
         return userMapper.toAdmin(save(user));
     }
@@ -163,9 +158,9 @@ public class UserService {
             user.setPhones(userMapper.toPhones(request.getPhones()));
         }
         if (request.getLocalityId() != null) {
-            // RF-14. Solo el contratante puede cambiar su localidad (ni el trabajador ni el admin)
-            if (!hasRole(user, RoleName.CONTRATANTE)) {
-                throw new ForbiddenOperationException("Solo el contratante puede cambiar su localidad");
+            // RF-14. El trabajador y el contratante pueden cambiar su localidad; el admin no
+            if (hasRole(user, RoleName.ADMIN)) {
+                throw new ForbiddenOperationException("El administrador no tiene localidad");
             }
             user.setLocality(findLocality(request.getLocalityId()));
         }

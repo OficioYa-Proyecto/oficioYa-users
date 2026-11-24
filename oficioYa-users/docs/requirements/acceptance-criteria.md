@@ -57,7 +57,7 @@ Documentación de los endpoints en Swagger (`/swagger-ui.html`):
 
 | # | Dado | Cuando | Entonces |
 |---|------|--------|----------|
-| 1 | Un usuario activo | Consulta su perfil | Ve sus datos con correo (`*****@mail.com`) y teléfono (`******4567`) enmascarados |
+| 1 | Un usuario activo | Consulta su perfil | Ve sus datos con correo (`a**a@mail.com`) y teléfono (`******4567`) enmascarados |
 | 2 | — | Consulta el perfil sin token | Recibe 401 |
 
 ## RF-04 Editar perfil propio (`PATCH /api/v1/users/me`)
@@ -189,19 +189,19 @@ El token sigue trayendo el rol anterior hasta el próximo login; el front vuelve
 Automatizado en `RoleRemovalServiceTest`, `RoleRemovalControllerTest`, `UserServiceTest` (reglas al quitar el rol), `WorkerClientTest` y `RequestsClientTest` (Worker y Servicios simulados).
 El token con el que se consulta el perfil en Worker (`GET /api/v1/workers/me`) lleva como `sub` el id del usuario; verificado en `WorkerClientTest`.
 
-## RF-14 Localidad del contratante (`GET /api/v1/localities`, `localityId` en registro y edición)
+## RF-14 Localidad del trabajador y del contratante (`GET /api/v1/localities`, `localityId` en registro y edición)
 
 | #  | Dado | Cuando | Entonces |
 |----|------|--------|----------|
-| 1  | — | Consulto el catálogo sin token | Recibo 200 con las 20 localidades de Bogotá ordenadas por id |
+| 1  | — | Consulto el catálogo sin token | Recibo 200 con las 20 localidades de Bogotá ordenadas alfabéticamente |
 | 2  | Un visitante con rol CONTRATANTE | Me registro con `localityId` de una localidad existente | Recibo 201 y mi perfil trae `locality: {id, name}` |
-| 3  | Un visitante solo con rol TRABAJADOR | Me registro con `localityId` | Recibo 201 y la cuenta queda sin localidad |
-| 4  | Un visitante | Me registro sin `localityId` | Recibo 201 sin localidad |
-| 5  | Un contratante | Me registro o edito mi perfil con un `localityId` inexistente | Recibo 400 y no se guarda nada |
-| 6  | Un contratante activo | Cambio mi `localityId` en `PATCH /users/me` | Recibo 200 con la nueva localidad |
-| 7  | Un trabajador (sin rol CONTRATANTE) o el administrador | Intento cambiar mi `localityId` | Recibo 403 y no se guarda nada; sí puedo editar nombre y teléfonos |
-| 8  | Un usuario con ambos roles y localidad | El administrador le quita el rol CONTRATANTE (RF-13) | La cuenta queda sin localidad |
+| 3  | Un visitante solo con rol TRABAJADOR | Me registro con `localityId` de una localidad existente | Recibo 201 y mi perfil trae `locality: {id, name}` |
+| 4  | Un visitante | Me registro sin `localityId` | Recibo 400 "La localidad es obligatoria" |
+| 5  | Un trabajador o contratante | Me registro o edito mi perfil con un `localityId` inexistente | Recibo 400 y no se guarda nada |
+| 6  | Un trabajador o contratante activo | Cambio mi `localityId` en `PATCH /users/me` | Recibo 200 con la nueva localidad |
+| 7  | El administrador | Intento cambiar mi `localityId` | Recibo 403 y no se guarda nada; sí puedo editar nombre y teléfonos |
+| 8  | Un usuario con ambos roles y localidad | El administrador le quita el rol CONTRATANTE (RF-13) | Conserva su localidad |
 | 9  | Un usuario con ambos roles y localidad | El administrador le quita el rol TRABAJADOR (RF-13) | Conserva su localidad |
-| 10 | — | Consulto `GET /localities/{id}/workers` (se quitó porque el trabajador no tiene localidad) | Recibo 404 |
+| 10 | — | Consulto `GET /localities/{id}/workers` (se quitó: Worker ubica a sus trabajadores por barrio) | Recibo 404 |
 
 Automatizado en `UserServiceTest`, `LocalityServiceTest` y `UserAcceptanceTest` (RF-14).

@@ -22,9 +22,9 @@
                   "pm.test('Responde 201', () => pm.response.to.have.status(201));",
                   "const res = pm.response.json();",
                   "pm.collectionVariables.set('userId', res.id);",
-                  "pm.test('Correo enmascarado', () => pm.expect(res.email).to.match(/^\\*{5}@/));",
+                  "pm.test('Correo enmascarado', () => pm.expect(res.email).to.match(/^[^*]\\*\\*[^*]?@/));",
                   "pm.test('Guarda la fecha de nacimiento (RF-01)', () => pm.expect(res.birthDate).to.eql('1995-05-20'));",
-                  "pm.test('No guarda la localidad: solo es trabajador (RF-14)', () => pm.expect(res.locality).to.be.undefined);"
+                  "pm.test('Guarda la localidad del trabajador (RF-14)', () => pm.expect(res.locality.id).to.eql(1));"
                 ]
               }
             },
@@ -209,7 +209,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Menor Pérez\",\n  \"email\": \"menor{{$timestamp}}@mail.com\",\n  \"birthDate\": \"{{minorBirthDate}}\",\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"TRABAJADOR\"\n  ]\n}",
+              "raw": "{\n  \"name\": \"Menor Pérez\",\n  \"email\": \"menor{{$timestamp}}@mail.com\",\n  \"birthDate\": \"{{minorBirthDate}}\",\n  \"localityId\": 1,\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"TRABAJADOR\"\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -306,7 +306,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Ana Pérez\",\n  \"email\": \"admin{{$timestamp}}@mail.com\",\n  \"birthDate\": \"1995-05-20\",\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"ADMIN\"\n  ]\n}",
+              "raw": "{\n  \"name\": \"Ana Pérez\",\n  \"email\": \"admin{{$timestamp}}@mail.com\",\n  \"birthDate\": \"1995-05-20\",\n  \"localityId\": 1,\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"ADMIN\"\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -354,7 +354,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Ana Pérez\",\n  \"email\": \"sinservicio{{$timestamp}}@mail.com\",\n  \"birthDate\": \"1995-05-20\",\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"TRABAJADOR\"\n  ]\n}",
+              "raw": "{\n  \"name\": \"Ana Pérez\",\n  \"email\": \"sinservicio{{$timestamp}}@mail.com\",\n  \"birthDate\": \"1995-05-20\",\n  \"localityId\": 1,\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"TRABAJADOR\"\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1872,7 +1872,7 @@
                 "exec": [
                   "pm.test('Responde 200', () => pm.response.to.have.status(200));",
                   "pm.test('Roles actualizados', () => pm.expect(pm.response.json().roles).to.have.members([\"TRABAJADOR\"]));",
-                  "pm.test('Sin localidad al quitar CONTRATANTE (RF-14)', () => pm.expect(pm.response.json().locality).to.be.undefined);"
+                  "pm.test('Conserva la localidad al quitar CONTRATANTE (RF-14)', () => pm.expect(pm.response.json().locality).to.not.be.undefined);"
                 ]
               }
             }
@@ -1960,9 +1960,10 @@
                 "exec": [
                   "pm.test('Responde 200', () => pm.response.to.have.status(200));",
                   "const res = pm.response.json();",
-                  "pm.test('Las 20 localidades de Bogotá en orden', () => {",
+                  "pm.test('Las 20 localidades de Bogotá en orden alfabético', () => {",
                   "    pm.expect(res).to.have.lengthOf(20);",
-                  "    pm.expect(res[0]).to.eql({ id: 1, name: 'Usaquén' });",
+                  "    const names = res.map(l => l.name);",
+                  "    pm.expect(names).to.eql([...names].sort((a, b) => a.localeCompare(b, 'es')));",
                   "});"
                 ]
               }
@@ -1986,14 +1987,15 @@
           "response": []
         },
         {
-          "name": "15.14 Error: el trabajador no puede cambiar su localidad",
+          "name": "15.14 El trabajador cambia su localidad",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Queda en Chapinero (RF-14)', () => pm.expect(pm.response.json().locality).to.eql({ id: 2, name: 'Chapinero' }));"
                 ]
               }
             }

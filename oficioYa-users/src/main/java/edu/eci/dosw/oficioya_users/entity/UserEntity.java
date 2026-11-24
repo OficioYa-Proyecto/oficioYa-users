@@ -33,7 +33,7 @@ public class UserEntity {
     @Column(updatable = false)
     private LocalDate birthDate;
 
-    /** RF-14. Localidad; solo la tiene el contratante (opcional) */
+    /** RF-14. Localidad; opcional; la tienen el trabajador y el contratante, no el admin */
     @ManyToOne
     @JoinColumn(name = "locality_id")
     private LocalityEntity locality;

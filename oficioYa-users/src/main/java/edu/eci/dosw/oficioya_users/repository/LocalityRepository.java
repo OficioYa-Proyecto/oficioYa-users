@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface LocalityRepository extends JpaRepository<LocalityEntity, Long> {
-    List<LocalityEntity> findAllByOrderByIdAsc();
+    List<LocalityEntity> findAllByOrderByNameAsc();
 }
