@@ -209,7 +209,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Menor Pérez\",\n  \"email\": \"menor{{$timestamp}}@mail.com\",\n  \"birthDate\": \"{{minorBirthDate}}\",\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"TRABAJADOR\"\n  ]\n}",
+              "raw": "{\n  \"name\": \"Menor Pérez\",\n  \"email\": \"menor{{$timestamp}}@mail.com\",\n  \"birthDate\": \"{{minorBirthDate}}\",\n  \"localityId\": 1,\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"TRABAJADOR\"\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -306,7 +306,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Ana Pérez\",\n  \"email\": \"admin{{$timestamp}}@mail.com\",\n  \"birthDate\": \"1995-05-20\",\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"ADMIN\"\n  ]\n}",
+              "raw": "{\n  \"name\": \"Ana Pérez\",\n  \"email\": \"admin{{$timestamp}}@mail.com\",\n  \"birthDate\": \"1995-05-20\",\n  \"localityId\": 1,\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"ADMIN\"\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -354,7 +354,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Ana Pérez\",\n  \"email\": \"sinservicio{{$timestamp}}@mail.com\",\n  \"birthDate\": \"1995-05-20\",\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"TRABAJADOR\"\n  ]\n}",
+              "raw": "{\n  \"name\": \"Ana Pérez\",\n  \"email\": \"sinservicio{{$timestamp}}@mail.com\",\n  \"birthDate\": \"1995-05-20\",\n  \"localityId\": 1,\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"TRABAJADOR\"\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"

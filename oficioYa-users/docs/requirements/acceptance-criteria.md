@@ -196,7 +196,7 @@ El token con el que se consulta el perfil en Worker (`GET /api/v1/workers/me`) l
 | 1  | — | Consulto el catálogo sin token | Recibo 200 con las 20 localidades de Bogotá ordenadas alfabéticamente |
 | 2  | Un visitante con rol CONTRATANTE | Me registro con `localityId` de una localidad existente | Recibo 201 y mi perfil trae `locality: {id, name}` |
 | 3  | Un visitante solo con rol TRABAJADOR | Me registro con `localityId` de una localidad existente | Recibo 201 y mi perfil trae `locality: {id, name}` |
-| 4  | Un visitante | Me registro sin `localityId` | Recibo 201 sin localidad |
+| 4  | Un visitante | Me registro sin `localityId` | Recibo 400 "La localidad es obligatoria" |
 | 5  | Un trabajador o contratante | Me registro o edito mi perfil con un `localityId` inexistente | Recibo 400 y no se guarda nada |
 | 6  | Un trabajador o contratante activo | Cambio mi `localityId` en `PATCH /users/me` | Recibo 200 con la nueva localidad |
 | 7  | El administrador | Intento cambiar mi `localityId` | Recibo 403 y no se guarda nada; sí puedo editar nombre y teléfonos |
