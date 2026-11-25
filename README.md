@@ -67,6 +67,7 @@ Variables de entorno (ver [.env.example](oficioYa-users/.env.example)):
 | `JWT_SECRET` | Clave compartida con Identity, en Base64 |
 | `WORKERS_URL`, `REQUESTS_URL` | URL de los microservicios de Worker y Requests |
 | `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PHONE` | Cuenta de administrador que se crea al iniciar |
+|`ADMIN_NOTIFICATION_EMAIL` | Correo real del administrador donde llegan los avisos de peticiones quitar rol |
 
 Con H2 en memoria, sin instalar PostgreSQL:
 
