@@ -21,6 +21,15 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * Clase de pruebas de AdminSeeder con repositorios simulados (Mockito)
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
 @ExtendWith(MockitoExtension.class)
 class AdminSeederTest {
 
@@ -31,16 +40,31 @@ class AdminSeederTest {
     @Mock
     private RoleRepository roleRepository;
 
+    /**
+     * Método que crea la tarea de AdminSeeder con los datos de prueba
+     *
+     * @param email El correo del administrador
+     * @param phone El teléfono del administrador
+     * @return CommandLineRunner La tarea, para ejecutarla en la prueba
+     */
     private CommandLineRunner runner(String email, String phone) {
         return new AdminSeeder().seedAdmin(userRepository, roleRepository, email, " Administrador ", phone);
-    }
+    } // Cierre del método
 
+    /**
+     * Método que crea el rol ADMIN
+     *
+     * @return RoleEntity El rol, para simular que está sembrado
+     */
     private static RoleEntity adminRole() {
         RoleEntity role = new RoleEntity();
         role.setName("ADMIN");
         return role;
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que se crea un admin activo con el correo normalizado y su teléfono principal
+     */
     @Test
     void createsActiveAdminWithNormalizedEmailAndPrincipalPhone() throws Exception {
         when(userRepository.existsByEmail(EMAIL)).thenReturn(false);
@@ -59,8 +83,11 @@ class AdminSeederTest {
         assertThat(admin.getPhones()).hasSize(1);
         assertThat(admin.getPhones().get(0).getNumber()).isEqualTo("3000000000");
         assertThat(admin.getPhones().get(0).isPrincipal()).isTrue();
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que no se crea nada si el admin ya existe
+     */
     @Test
     void doesNothingWhenAdminAlreadyExists() throws Exception {
         when(userRepository.existsByEmail(EMAIL)).thenReturn(true);
@@ -69,8 +96,11 @@ class AdminSeederTest {
 
         verify(userRepository, never()).save(any());
         verify(roleRepository, never()).findByName(any());
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que falla si el teléfono está vacío
+     */
     @Test
     void failsWhenPhoneIsMissing() {
         when(userRepository.existsByEmail(EMAIL)).thenReturn(false);
@@ -78,8 +108,11 @@ class AdminSeederTest {
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> runner(EMAIL, " ").run());
         assertThat(exception.getMessage()).contains("ADMIN_PHONE");
         verify(userRepository, never()).save(any());
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que falla si el teléfono es nulo
+     */
     @Test
     void failsWhenPhoneIsNull() {
         when(userRepository.existsByEmail(EMAIL)).thenReturn(false);
@@ -87,8 +120,11 @@ class AdminSeederTest {
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> runner(EMAIL, null).run());
         assertThat(exception.getMessage()).contains("ADMIN_PHONE");
         verify(userRepository, never()).save(any());
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que falla si el rol ADMIN no está sembrado
+     */
     @Test
     void failsWhenAdminRoleIsNotSeeded() {
         when(userRepository.existsByEmail(EMAIL)).thenReturn(false);
@@ -96,5 +132,5 @@ class AdminSeederTest {
 
         assertThrows(IllegalStateException.class, () -> runner(EMAIL, "3000000000").run());
         verify(userRepository, never()).save(any());
-    }
-}
+    } // Cierre del método
+} // Cierre de la clase

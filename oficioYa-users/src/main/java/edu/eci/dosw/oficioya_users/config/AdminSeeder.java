@@ -19,12 +19,33 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/** Crea el administrador inicial a partir de variables de entorno (ADMIN_EMAIL, ADMIN_NAME, ADMIN_PHONE). */
+/**
+ * Clase de configuración que crea el administrador inicial (admin semilla) a partir de las variables de
+ * entorno ADMIN_EMAIL, ADMIN_NAME y ADMIN_PHONE. Solo se carga si admin.email tiene valor.
+ * [usa UserRepository y RoleRepository]
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
 @Slf4j
 @Configuration
 @ConditionalOnExpression("!'${admin.email:}'.isBlank()")
 public class AdminSeeder {
-
+    /**
+     * Método que define la tarea que crea el admin al arrancar la aplicación. Si ya existe una cuenta
+     * con ese correo no hace nada, si falta el teléfono o el rol ADMIN no está, falla
+     *
+     * @param userRepository El repositorio de usuarios
+     * @param roleRepository El repositorio de roles
+     * @param email El correo del administrador (se normaliza en minúsculas)
+     * @param name El nombre del administrador
+     * @param phone El teléfono principal del admin
+     * @return CommandLineRunner La tarea que Spring ejecuta al iniciar para que siempre exista un
+     * admin
+     */
     @Bean
     CommandLineRunner seedAdmin(UserRepository userRepository, RoleRepository roleRepository,
                                 @Value("${admin.email}") String email,
@@ -54,5 +75,5 @@ public class AdminSeeder {
 
             log.info("Administrador semilla creado con id {}", userRepository.save(admin).getId());
         };
-    }
-}
+    } // Cierre del método
+} // Cierre de la clase

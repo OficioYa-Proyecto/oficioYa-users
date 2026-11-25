@@ -8,6 +8,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Clase de servicio del catálogo de localidades (RF-14)
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -15,10 +25,14 @@ public class LocalityService {
 
     private final LocalityRepository localityRepository;
 
-    /** RF-14. Catálogo de localidades, ordenado alfabéticamente */
+    /**
+     * Método que obtiene el catálogo dde localidades
+     *
+     * @return List<LocalityDTO> Las localidades en orden alfabético [para front-end]
+     */
     public List<LocalityDTO> findAll() {
         return localityRepository.findAllByOrderByNameAsc().stream()
                 .map(locality -> new LocalityDTO(locality.getId(), locality.getName()))
                 .toList();
-    }
-}
+    } // Cierre del método
+} // Cierre de la clase

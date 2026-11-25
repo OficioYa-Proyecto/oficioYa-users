@@ -7,7 +7,17 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
-/** RF-14. Localidad de Bogotá del catálogo de localidades. Ids fijos (data.sql) porque otros microservicios los usan */
+/**
+ * Clase entidad de la tabla localities: localidad de Bogotá del catálogo (RF-14).
+ * Los ids son fijos porque otros microservicios los usan.
+ * Se relaciona con UserEntity (una localidad, muchos usuarios)
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
 @Getter
 @Setter
 @Entity
@@ -19,4 +29,4 @@ public class LocalityEntity {
 
     @Column(nullable = false, unique = true, length = 100)
     private String name;
-}
+} // Cierre de la clase

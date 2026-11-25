@@ -13,6 +13,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Clase entidad de la tabla users: la cuenta de usuario.
+ * Tiene teléfonos, roles y una localidad. Guarda las fechas de creación,
+ * actualización y desactivación (RF-12)
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
 @Getter
 @Setter
 @Entity
@@ -59,6 +70,11 @@ public class UserEntity {
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<RoleEntity> roles = new HashSet<>();
 
+    /**
+     * Método que se ejecuta antes de guardar la cuenta por primera vez:
+     * pone fechas de creación y actualización y si no tiene estado
+     * la deja en ACTIVE
+     */
     @PrePersist
     void onCreate() {
         createdAt = LocalDateTime.now();
@@ -66,8 +82,14 @@ public class UserEntity {
         if (accountStatus == null) {
             accountStatus = AccountStatus.ACTIVE;
         }
-    }
+    } // Cierre del método
 
+    /**
+     * Método que reemplaza los teléfonos de la cuenta,
+     * los que ya no están se borran de la base de datos
+     *
+     * @param newPhones Los teléfonos nuevos (si es nulo, la cuenta queda sin teléfonos)
+     */
     @PreUpdate
     void onUpdate() {
         updatedAt = LocalDateTime.now();
@@ -78,10 +100,16 @@ public class UserEntity {
         if (newPhones != null) {
             newPhones.forEach(this::addPhone);
         }
-    }
+    } // Cierre del método
 
+    /**
+     * Método que agrega un teléfono y lo enlaza con la cuenta
+     * para que JPA guarde la llave foránea.
+     *
+     * @param phone El teléfono a agregar.
+     */
     public void addPhone(PhoneEntity phone) {
         phone.setUser(this);
         phones.add(phone);
-    }
-}
+    } // Cierre del método
+} // Cierre de la clase

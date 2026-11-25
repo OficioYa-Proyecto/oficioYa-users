@@ -10,6 +10,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Clase DTO de una cuenta en las respuestas.
+ * Los campos nulos no se envían, por eso la misma clase sirve para
+ * la vista pública, la propia y la del administrador
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo (completar apellidos)
+ * @author Nicolás (completar apellidos)
+ * @version 24/11/2026
+ */
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserResponseDTO {
@@ -23,4 +34,4 @@ public class UserResponseDTO {
     private AccountStatus accountStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-}
+} // Cierre de la clase

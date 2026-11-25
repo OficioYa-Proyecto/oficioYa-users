@@ -40,12 +40,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Pruebas de aceptación: recorren cada requisito funcional (RF-01 a RF-10).
- * Los criterios están documentados en docs/requirements/acceptance-criteria.md.
+ * Pruebas de aceptación: recorren cada requisito funcional (RF-01 a RF-10)
  */
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {
+        /**
+         * Clase de pruebas de aceptación: levanta toda la aplicación con MockMvc y recorre los flujos
+         * completos de los requerimientos (controlador, servicio, seguridad y base de datos). Worker se
+         * simula con @MockBean. Cada clase @Nested agrupa un requerimiento
+         *
+         * @author Daniel Felipe Sua
+         * @author David Felipe Ortiz Salcedo
+         * @author Juan Pablo Duarte Silva
+         * @author Nicolás Esteban Delgado Rodríguez
+         * @version 24/11/2026
+         */
         "spring.datasource.url=jdbc:h2:mem:oficioya_acceptance;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
         "admin.email=admin@oficioya.com",
         "admin.name=Administrador",
@@ -74,6 +84,10 @@ class UserAcceptanceTest {
 
     private UUID adminId;
 
+    /**
+     * Método que se ejecuta antes de cada prueba y prepara el id del admin semilla, buscándolo en el
+     * listado del admin
+     */
     @BeforeEach
     void findSeededAdmin() throws Exception {
         String body = mockMvc.perform(get(ADMIN_USERS).header(AUTH, token(UUID.randomUUID(), "ADMIN")))
@@ -84,14 +98,20 @@ class UserAcceptanceTest {
                 adminId = UUID.fromString(user.get("id").asText());
             }
         }
-    }
+    } // Cierre del método
 
     // RF-01
 
+    /**
+     * Clase de pruebas del registro de cuentas (RF-01).
+     */
     @Nested
     @DisplayName("RF-01 Registrar cuenta")
     class Register {
 
+        /**
+         * Prueba que el registro crea una cuenta activa.
+         */
         @Test
         @DisplayName("Dado un correo nuevo, cuando me registro con datos válidos, entonces la cuenta queda activa con el rol elegido")
         void registersActiveAccount() throws Exception {
@@ -102,24 +122,33 @@ class UserAcceptanceTest {
                     .andExpect(jsonPath("$.accountStatus").value("ACTIVE"))
                     .andExpect(jsonPath("$.roles", containsInAnyOrder("CONTRATANTE")))
                     .andExpect(jsonPath("$.email").value("a**1@mail.com"));
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que se puede registrar una cuenta con los roles TRABAJADOR y CONTRATANTE.
+         */
         @Test
         @DisplayName("Dado un correo nuevo, cuando me registro como trabajador y contratante, entonces la cuenta tiene ambos roles")
         void registersWithBothRoles() throws Exception {
             mockMvc.perform(registerRequest(registerBody("Luis", "luis.rf01@mail.com", "TRABAJADOR", "CONTRATANTE")))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.roles", containsInAnyOrder("TRABAJADOR", "CONTRATANTE")));
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que se puede registrar una cuenta solo como trabajador.
+         */
         @Test
         @DisplayName("Dado un correo nuevo, cuando me registro solo como trabajador, entonces la cuenta tiene únicamente ese rol")
         void registersOnlyAsWorker() throws Exception {
             mockMvc.perform(registerRequest(registerBody("Rosa", "rosa.rf01@mail.com", "TRABAJADOR")))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.roles", containsInAnyOrder("TRABAJADOR")));
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que no se puede registrar un correo que ya existe (409).
+         */
         @Test
         @DisplayName("Dado un correo ya registrado, cuando intento registrarme con él, entonces recibo 409")
         void rejectsDuplicatedEmail() throws Exception {
@@ -127,15 +156,21 @@ class UserAcceptanceTest {
 
             mockMvc.perform(registerRequest(registerBody("Otra", "REPETIDO.rf01@mail.com", "TRABAJADOR")))
                     .andExpect(status().isConflict());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que no se puede registrar una cuenta con el rol ADMIN.
+         */
         @Test
         @DisplayName("Cuando intento registrarme con el rol ADMIN, entonces recibo 400")
         void rejectsAdminRole() throws Exception {
             mockMvc.perform(registerRequest(registerBody("Eva", "eva.rf01@mail.com", "ADMIN")))
                     .andExpect(status().isBadRequest());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que no se puede registrar más de un teléfono principal.
+         */
         @Test
         @DisplayName("Cuando me registro con dos teléfonos principales, entonces recibo 400")
         void rejectsTwoPrincipalPhones() throws Exception {
@@ -145,8 +180,11 @@ class UserAcceptanceTest {
                      "roles":["TRABAJADOR"]}""";
 
             mockMvc.perform(registerRequest(body)).andExpect(status().isBadRequest());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que el registro rechaza datos con formato inválido (400).
+         */
         @Test
         @DisplayName("Cuando me registro con más de tres teléfonos o datos inválidos, entonces recibo 400")
         void rejectsInvalidData() throws Exception {
@@ -159,8 +197,11 @@ class UserAcceptanceTest {
             mockMvc.perform(registerRequest(tooManyPhones)).andExpect(status().isBadRequest());
             mockMvc.perform(registerRequest("{\"name\":\"\",\"email\":\"no-es-correo\",\"phones\":[],\"roles\":[]}"))
                     .andExpect(status().isBadRequest());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que se registra un mayor de edad y se guarda su fecha de nacimiento.
+         */
         @Test
         @DisplayName("Dado que soy mayor de edad, cuando me registro con mi fecha de nacimiento, entonces queda guardada en mi cuenta")
         void registersAdultWithBirthDate() throws Exception {
@@ -171,8 +212,11 @@ class UserAcceptanceTest {
             mockMvc.perform(registerRequest(body))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.birthDate").value("1995-05-20"));
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que el registro exige la fecha de nacimiento.
+         */
         @Test
         @DisplayName("Cuando me registro sin fecha de nacimiento, entonces recibo 400")
         void rejectsMissingBirthDate() throws Exception {
@@ -181,8 +225,11 @@ class UserAcceptanceTest {
                      "phones":[{"number":"3007777777","principal":true}],"roles":["CONTRATANTE"]}""";
 
             mockMvc.perform(registerRequest(body)).andExpect(status().isBadRequest());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que el registro rechaza a menores de edad y fechas futuras.
+         */
         @Test
         @DisplayName("Dado que soy menor de edad o la fecha es futura, cuando me registro, entonces recibo 400")
         void rejectsMinorOrFutureBirthDate() throws Exception {
@@ -193,15 +240,21 @@ class UserAcceptanceTest {
                          "phones":[{"number":"3006666666","principal":true}],"roles":["CONTRATANTE"]}""".formatted(date);
                 mockMvc.perform(registerRequest(body)).andExpect(status().isBadRequest());
             }
-        }
-    }
+        } // Cierre del método
+    } // Cierre de la clase
 
     // RF-02
 
+    /**
+     * Clase de pruebas de agregar un rol a la cuenta (RF-02).
+     */
     @Nested
     @DisplayName("RF-02 Agregar rol a la cuenta")
     class AddRole {
 
+        /**
+         * Prueba que un contratante puede agregarse el rol TRABAJADOR.
+         */
         @Test
         @DisplayName("Dado un contratante activo, cuando agrega el rol trabajador, entonces su cuenta tiene ambos roles")
         void addsMissingRole() throws Exception {
@@ -210,8 +263,11 @@ class UserAcceptanceTest {
             mockMvc.perform(post(ME + "/roles/TRABAJADOR").header(AUTH, token(id, "CONTRATANTE")))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.roles", containsInAnyOrder("CONTRATANTE", "TRABAJADOR")));
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que un trabajador puede agregarse el rol CONTRATANTE.
+         */
         @Test
         @DisplayName("Dado un trabajador activo, cuando agrega el rol contratante, entonces su cuenta tiene ambos roles")
         void workerAddsContractorRole() throws Exception {
@@ -220,8 +276,11 @@ class UserAcceptanceTest {
             mockMvc.perform(post(ME + "/roles/CONTRATANTE").header(AUTH, token(id, "TRABAJADOR")))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.roles", containsInAnyOrder("TRABAJADOR", "CONTRATANTE")));
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que no se puede agregar un rol que la cuenta ya tiene (409).
+         */
         @Test
         @DisplayName("Dado un usuario que ya tiene el rol, cuando lo vuelve a agregar, entonces recibe 409")
         void rejectsRepeatedRole() throws Exception {
@@ -229,8 +288,11 @@ class UserAcceptanceTest {
 
             mockMvc.perform(post(ME + "/roles/TRABAJADOR").header(AUTH, token(id, "TRABAJADOR")))
                     .andExpect(status().isConflict());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que no se puede agregar el rol ADMIN.
+         */
         @Test
         @DisplayName("Cuando un usuario intenta agregarse el rol ADMIN, entonces recibe 400")
         void rejectsAdminRole() throws Exception {
@@ -238,22 +300,31 @@ class UserAcceptanceTest {
 
             mockMvc.perform(post(ME + "/roles/ADMIN").header(AUTH, token(id, "TRABAJADOR")))
                     .andExpect(status().isBadRequest());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que el administrador no puede agregarse roles.
+         */
         @Test
         @DisplayName("Dado el administrador, cuando intenta agregarse un rol, entonces recibe 403")
         void adminCannotAddRoles() throws Exception {
             mockMvc.perform(post(ME + "/roles/TRABAJADOR").header(AUTH, token(adminId, "ADMIN")))
                     .andExpect(status().isForbidden());
-        }
-    }
+        } // Cierre del método
+    } // Cierre de la clase
 
     // RF-03
 
+    /**
+     * Clase de pruebas del perfil propio (RF-03).
+     */
     @Nested
     @DisplayName("RF-03 Consultar perfil propio")
     class OwnProfile {
 
+        /**
+         * Prueba que el perfil propio muestra el correo y los teléfonos enmascarados.
+         */
         @Test
         @DisplayName("Dado un usuario activo, cuando consulta su perfil, entonces ve sus datos con correo y teléfono enmascarados")
         void showsMaskedOwnProfile() throws Exception {
@@ -266,21 +337,30 @@ class UserAcceptanceTest {
                     .andExpect(jsonPath("$.phones[0].number").value("******4567"))
                     .andExpect(jsonPath("$.phones[0].principal").value(true))
                     .andExpect(jsonPath("$.accountStatus").value("ACTIVE"));
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que el perfil propio exige token (401).
+         */
         @Test
         @DisplayName("Cuando consulto el perfil sin token, entonces recibo 401")
         void requiresToken() throws Exception {
             mockMvc.perform(get(ME)).andExpect(status().isUnauthorized());
-        }
-    }
+        } // Cierre del método
+    } // Cierre de la clase
 
     // RF-04
 
+    /**
+     * Clase de pruebas de la edición del perfil propio (RF-04).
+     */
     @Nested
     @DisplayName("RF-04 Editar perfil propio")
     class UpdateProfile {
 
+        /**
+         * Prueba que se pueden cambiar el nombre y los teléfonos.
+         */
         @Test
         @DisplayName("Dado un usuario activo, cuando cambia su nombre y teléfonos, entonces quedan guardados solo los nuevos")
         void updatesNameAndPhones() throws Exception {
@@ -297,8 +377,11 @@ class UserAcceptanceTest {
                     .andExpect(jsonPath("$.email").value("jorge.rf04@mail.com"))
                     .andExpect(jsonPath("$.phones", hasSize(2)))
                     .andExpect(jsonPath("$.phones[*].number", containsInAnyOrder("3109998888", "3107776666")));
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que la edición rechaza una lista de teléfonos sin principal.
+         */
         @Test
         @DisplayName("Cuando edita sus teléfonos sin uno principal, entonces recibe 400")
         void rejectsPhonesWithoutPrincipal() throws Exception {
@@ -307,15 +390,21 @@ class UserAcceptanceTest {
 
             mockMvc.perform(json(patch(ME).header(AUTH, token(id, "TRABAJADOR")), update))
                     .andExpect(status().isBadRequest());
-        }
-    }
+        } // Cierre del método
+    } // Cierre de la clase
 
     // RF-14
 
+    /**
+     * Clase de pruebas de la localidad del usuario (RF-14).
+     */
     @Nested
     @DisplayName("RF-14 Localidad del trabajador y del contratante")
     class Locality {
 
+        /**
+         * Prueba que el contratante puede cambiar su localidad.
+         */
         @Test
         @DisplayName("Dado un contratante, cuando cambia su localidad, entonces queda guardada")
         void contractorChangesLocality() throws Exception {
@@ -325,8 +414,11 @@ class UserAcceptanceTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.locality.id").value(2))
                     .andExpect(jsonPath("$.locality.name").value("Chapinero"));
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que el trabajador puede cambiar su localidad.
+         */
         @Test
         @DisplayName("Dado un trabajador, cuando cambia su localidad, entonces queda guardada")
         void workerChangesLocality() throws Exception {
@@ -335,8 +427,11 @@ class UserAcceptanceTest {
             mockMvc.perform(json(patch(ME).header(AUTH, token(id, "TRABAJADOR")), "{\"localityId\":2}"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.locality.id").value(2));
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que el trabajador se registra con su localidad.
+         */
         @Test
         @DisplayName("Dado un trabajador que se registra con localidad, entonces la cuenta queda con esa localidad")
         void workerRegistersWithLocality() throws Exception {
@@ -346,16 +441,22 @@ class UserAcceptanceTest {
             mockMvc.perform(registerRequest(body))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.locality.id").value(3));
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que el registro exige la localidad.
+         */
         @Test
         @DisplayName("Cuando me registro sin localidad, entonces recibo 400")
         void rejectsMissingLocality() throws Exception {
             String body = registerBody("Tomás", "tomas.rf14@mail.com", "CONTRATANTE").replace("\"localityId\":1,", "");
 
             mockMvc.perform(registerRequest(body)).andExpect(status().isBadRequest());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que el contratante se registra con su localidad.
+         */
         @Test
         @DisplayName("Dado un contratante que se registra con localidad, entonces la cuenta queda con esa localidad")
         void contractorRegistersWithLocality() throws Exception {
@@ -365,15 +466,21 @@ class UserAcceptanceTest {
             mockMvc.perform(registerRequest(body))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.locality.id").value(3));
-        }
-    }
+        } // Cierre del método
+    } // Cierre de la clase
 
     // RF-05
 
+    /**
+     * Clase de pruebas del perfil público (RF-05).
+     */
     @Nested
     @DisplayName("RF-05 Consultar perfil público")
     class PublicProfile {
 
+        /**
+         * Prueba que el perfil público no muestra correo ni teléfonos.
+         */
         @Test
         @DisplayName("Dado otro usuario activo, cuando consulto su perfil, entonces solo veo id, nombre y roles")
         void showsOnlyPublicData() throws Exception {
@@ -387,8 +494,11 @@ class UserAcceptanceTest {
                     .andExpect(jsonPath("$.roles", containsInAnyOrder("TRABAJADOR")))
                     .andExpect(jsonPath("$.email").doesNotExist())
                     .andExpect(jsonPath("$.phones").doesNotExist());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que el perfil público de una cuenta inactiva no se encuentra (404).
+         */
         @Test
         @DisplayName("Dado un usuario desactivado, cuando consulto su perfil público, entonces recibo 404")
         void hidesInactiveUsers() throws Exception {
@@ -398,8 +508,11 @@ class UserAcceptanceTest {
 
             mockMvc.perform(get(USERS + "/" + worker).header(AUTH, token(client, "CONTRATANTE")))
                     .andExpect(status().isNotFound());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que una cuenta inactiva no puede consultar perfiles públicos (403).
+         */
         @Test
         @DisplayName("Dado que mi cuenta está desactivada, cuando consulto un perfil público, entonces recibo 403")
         void inactiveRequesterIsForbidden() throws Exception {
@@ -409,15 +522,21 @@ class UserAcceptanceTest {
 
             mockMvc.perform(get(USERS + "/" + worker).header(AUTH, token(client, "CONTRATANTE")))
                     .andExpect(status().isForbidden());
-        }
-    }
+        } // Cierre del método
+    } // Cierre de la clase
 
     // RF-06
 
+    /**
+     * Clase de pruebas de la desactivación de cuentas (RF-06).
+     */
     @Nested
     @DisplayName("RF-06 Desactivar cuenta")
     class Deactivate {
 
+        /**
+         * Prueba que el administrador desactiva una cuenta con motivo.
+         */
         @Test
         @DisplayName("Dado un usuario activo, cuando el admin lo desactiva con motivo, entonces la cuenta queda inactiva y no puede usar su perfil")
         void deactivatesAccount() throws Exception {
@@ -429,8 +548,11 @@ class UserAcceptanceTest {
 
             mockMvc.perform(get(ME).header(AUTH, token(id, "TRABAJADOR")))
                     .andExpect(status().isForbidden());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que desactivar exige un motivo.
+         */
         @Test
         @DisplayName("Cuando el admin desactiva una cuenta sin motivo, entonces recibe 400")
         void requiresReason() throws Exception {
@@ -439,8 +561,11 @@ class UserAcceptanceTest {
             mockMvc.perform(json(patch(ADMIN_USERS + "/" + id + "/deactivate").header(AUTH, token(adminId, "ADMIN")),
                             "{\"reason\":\"\"}"))
                     .andExpect(status().isBadRequest());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que no se puede desactivar una cuenta que ya está inactiva (409).
+         */
         @Test
         @DisplayName("Dado una cuenta ya inactiva, cuando el admin la vuelve a desactivar, entonces recibe 409")
         void rejectsAlreadyInactive() throws Exception {
@@ -448,14 +573,20 @@ class UserAcceptanceTest {
             changeStatus(id, "deactivate");
 
             changeStatus(id, "deactivate").andExpect(status().isConflict());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que el administrador no puede desactivar su propia cuenta (403).
+         */
         @Test
         @DisplayName("Cuando el admin intenta desactivar su propia cuenta, entonces recibe 403")
         void adminCannotDeactivateItself() throws Exception {
             changeStatus(adminId, "deactivate").andExpect(status().isForbidden());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que solo el administrador puede desactivar cuentas (403).
+         */
         @Test
         @DisplayName("Cuando un usuario que no es admin intenta desactivar una cuenta, entonces recibe 403")
         void onlyAdminCanDeactivate() throws Exception {
@@ -464,15 +595,21 @@ class UserAcceptanceTest {
             mockMvc.perform(json(patch(ADMIN_USERS + "/" + id + "/deactivate").header(AUTH, token(id, "TRABAJADOR")),
                             "{\"reason\":\"Prueba\"}"))
                     .andExpect(status().isForbidden());
-        }
-    }
+        } // Cierre del método
+    } // Cierre de la clase
 
     // RF-07
 
+    /**
+     * Clase de pruebas de la reactivación de cuentas (RF-07).
+     */
     @Nested
     @DisplayName("RF-07 Reactivar cuenta")
     class Activate {
 
+        /**
+         * Prueba que el administrador reactiva una cuenta inactiva.
+         */
         @Test
         @DisplayName("Dado un usuario inactivo, cuando el admin lo reactiva con motivo, entonces vuelve a usar su perfil")
         void reactivatesAccount() throws Exception {
@@ -485,23 +622,32 @@ class UserAcceptanceTest {
 
             mockMvc.perform(get(ME).header(AUTH, token(id, "CONTRATANTE")))
                     .andExpect(status().isOk());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que no se puede activar una cuenta que ya está activa (409).
+         */
         @Test
         @DisplayName("Dado una cuenta ya activa, cuando el admin la reactiva, entonces recibe 409")
         void rejectsAlreadyActive() throws Exception {
             UUID id = register("Felipe", "felipe.rf07@mail.com", "CONTRATANTE");
 
             changeStatus(id, "activate").andExpect(status().isConflict());
-        }
-    }
+        } // Cierre del método
+    } // Cierre de la clase
 
     // RF-08
 
+    /**
+     * Clase de pruebas de la vista del administrador (RF-08).
+     */
     @Nested
     @DisplayName("RF-08 Consultar información completa (administrador)")
     class AdminView {
 
+        /**
+         * Prueba que el administrador ve todos los datos de una cuenta sin enmascarar.
+         */
         @Test
         @DisplayName("Dado un usuario registrado, cuando el admin lo consulta, entonces ve todos sus datos sin enmascarar")
         void adminSeesFullData() throws Exception {
@@ -513,8 +659,11 @@ class UserAcceptanceTest {
                     .andExpect(jsonPath("$.phones[0].number").value("3001234567"))
                     .andExpect(jsonPath("$.accountStatus").value("ACTIVE"))
                     .andExpect(jsonPath("$.createdAt").exists());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que el administrador lista todas las cuentas.
+         */
         @Test
         @DisplayName("Cuando el admin lista los usuarios, entonces aparecen las cuentas registradas")
         void adminListsUsers() throws Exception {
@@ -523,7 +672,7 @@ class UserAcceptanceTest {
             mockMvc.perform(get(ADMIN_USERS).header(AUTH, token(adminId, "ADMIN")))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[*].email", hasItem("valeria.rf08@mail.com")));
-        }
+        } // Cierre del método
 
         @Test
         @DisplayName("Cuando el admin consulta un id que no existe, entonces recibe 404")
@@ -532,6 +681,9 @@ class UserAcceptanceTest {
                     .andExpect(status().isNotFound());
         }
 
+        /**
+         * Prueba que un usuario que no es administrador no puede usar las rutas de administración (403).
+         */
         @Test
         @DisplayName("Cuando un usuario que no es admin consulta la información completa, entonces recibe 403")
         void nonAdminIsForbidden() throws Exception {
@@ -539,15 +691,21 @@ class UserAcceptanceTest {
 
             mockMvc.perform(get(ADMIN_USERS + "/" + id).header(AUTH, token(id, "TRABAJADOR")))
                     .andExpect(status().isForbidden());
-        }
-    }
+        } // Cierre del método
+    } // Cierre de la clase
 
     // RF-09
 
+    /**
+     * Clase de pruebas del catálogo de zonas (RF-09).
+     */
     @Nested
     @DisplayName("RF-09 Consultar el catálogo de zonas")
     class Zones {
 
+        /**
+         * Prueba que el catálogo completo se consulta sin token.
+         */
         @Test
         @DisplayName("Sin token, cuando consulto las zonas, entonces recibo los 25 barrios ordenados por id")
         void listsWholeCatalogWithoutToken() throws Exception {
@@ -558,8 +716,11 @@ class UserAcceptanceTest {
                     .andExpect(jsonPath("$[0].name").value("Cedritos"))
                     .andExpect(jsonPath("$[0].locality").value("Usaquén"))
                     .andExpect(jsonPath("$[24].name").value("Bosa Centro"));
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que al pedir ids solo se devuelven las zonas que existen.
+         */
         @Test
         @DisplayName("Dados unos ids, cuando los consulto, entonces recibo solo las zonas que existen, sin repetidas")
         void returnsOnlyExistingZones() throws Exception {
@@ -568,7 +729,7 @@ class UserAcceptanceTest {
                     .andExpect(jsonPath("$", hasSize(2)))
                     .andExpect(jsonPath("$[0].name").value("Santa Bárbara"))
                     .andExpect(jsonPath("$[1].name").value("Teusaquillo"));
-        }
+        } // Cierre del método
 
         @Test
         @DisplayName("Cuando envío un id que no es número, entonces recibo 400")
@@ -576,14 +737,20 @@ class UserAcceptanceTest {
             mockMvc.perform(get(ZONES).param("ids", "uno"))
                     .andExpect(status().isBadRequest());
         }
-    }
+    } // Cierre de la clase
 
     // RF-10
 
+    /**
+     * Clase de pruebas de la consulta de varios usuarios (RF-10).
+     */
     @Nested
     @DisplayName("RF-10 Consultar varios usuarios a la vez")
     class UsersByIds {
 
+        /**
+         * Prueba que solo se devuelven las cuentas activas.
+         */
         @Test
         @DisplayName("Dadas una cuenta activa, una inactiva y un id que no existe, cuando las consulto con rol SERVICE, entonces recibo solo los datos públicos de la activa")
         void returnsOnlyActiveUsers() throws Exception {
@@ -599,8 +766,11 @@ class UserAcceptanceTest {
                     .andExpect(jsonPath("$[0].name").value("Sara"))
                     .andExpect(jsonPath("$[0].email").doesNotExist())
                     .andExpect(jsonPath("$[0].phones").doesNotExist());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que se rechazan más de 50 ids (400).
+         */
         @Test
         @DisplayName("Dados más de 50 ids, cuando los consulto, entonces recibo 400")
         void rejectsMoreThanFiftyIds() throws Exception {
@@ -608,33 +778,58 @@ class UserAcceptanceTest {
 
             mockMvc.perform(get(USERS).param("ids", ids).header(AUTH, token(adminId, "ADMIN")))
                     .andExpect(status().isBadRequest());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que la consulta exige token (401).
+         */
         @Test
         @DisplayName("Sin token, cuando consulto varios usuarios, entonces recibo 401")
         void requiresToken() throws Exception {
             mockMvc.perform(get(USERS).param("ids", UUID.randomUUID().toString()))
                     .andExpect(status().isUnauthorized());
-        }
-    }
+        } // Cierre del método
+    } // Cierre de la clase
 
     // RF-12
 
+    /**
+     * Clase de pruebas de las estadísticas de cuentas para Reporting (RF-12).
+     */
     @Nested
     @DisplayName("RF-12 Estadísticas de cuentas para Reporting")
     class AccountStats {
 
+        /**
+         * Método que consulta las estadísticas de un periodo como administrador.
+         *
+         * @param from La fecha de inicio (AAAA-MM-DD).
+         * @param to La fecha de fin (AAAA-MM-DD).
+         * @return JsonNode La respuesta en JSON, para comparar los conteos.
+         */
         private JsonNode stats(String from, String to) throws Exception {
             String body = mockMvc.perform(get(STATS).param("from", from).param("to", to).header(AUTH, token(adminId, "ADMIN")))
                     .andExpect(status().isOk())
                     .andReturn().getResponse().getContentAsString();
             return objectMapper.readTree(body);
-        }
+        } // Cierre del método
 
+        /**
+         * Método que calcula cuánto aumentó un conteo entre dos consultas.
+         *
+         * @param before Las estadísticas antes.
+         * @param after Las estadísticas después.
+         * @param group El grupo (registered o deactivated).
+         * @param field El campo (total, trabajador o contratante).
+         * @return long La diferencia, para no depender de las cuentas que ya existían.
+         */
         private static long increase(JsonNode before, JsonNode after, String group, String field) {
             return after.get(group).get(field).asLong() - before.get(group).get(field).asLong();
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que se cuentan por rol las cuentas registradas y las desactivadas en el periodo.
+         */
         @Test
         @DisplayName("Dadas dos cuentas nuevas y una de ellas desactivada hoy, cuando el administrador consulta el periodo de hoy, entonces se cuentan como registradas y desactivadas, en total y por rol")
         void countsRegisteredAndDeactivatedByRole() throws Exception {
@@ -652,8 +847,11 @@ class UserAcceptanceTest {
             assertThat(increase(before, after, "deactivated", "total")).isEqualTo(1);
             assertThat(increase(before, after, "deactivated", "trabajador")).isEqualTo(1);
             assertThat(increase(before, after, "deactivated", "contratante")).isEqualTo(1);
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que solo el administrador puede consultar las estadísticas (403).
+         */
         @Test
         @DisplayName("Cuando un usuario que no es administrador o un microservicio con rol SERVICE consulta las estadísticas, entonces recibe 403; sin token, 401")
         void onlyAdminCanQuery() throws Exception {
@@ -664,8 +862,11 @@ class UserAcceptanceTest {
                     .andExpect(status().isForbidden());
             mockMvc.perform(get(STATS).param("from", today).param("to", today))
                     .andExpect(status().isUnauthorized());
-        }
+        } // Cierre del método
 
+        /**
+         * Prueba que se rechaza un periodo inválido (400).
+         */
         @Test
         @DisplayName("Cuando falta una fecha o la de inicio es posterior a la de fin, entonces recibe 400")
         void rejectsInvalidPeriod() throws Exception {
@@ -674,11 +875,18 @@ class UserAcceptanceTest {
             mockMvc.perform(get(STATS).param("from", "2026-11-30").param("to", "2026-11-01").header(AUTH, token(adminId, "ADMIN")))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message").value("La fecha from no puede ser posterior a to"));
-        }
-    }
+        } // Cierre del método
+    } // Cierre de la clase
 
     // Utilidades
 
+    /**
+     * Método que firma un token JWT de prueba con el secreto de la aplicación.
+     *
+     * @param userId El id que va en el sub.
+     * @param roles Los roles del token.
+     * @return String El encabezado "Bearer <token>".
+     */
     private String token(UUID userId, String... roles) {
         return "Bearer " + Jwts.builder()
                 .subject(userId.toString())
@@ -686,32 +894,68 @@ class UserAcceptanceTest {
                 .expiration(new Date(System.currentTimeMillis() + 60_000))
                 .signWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret)))
                 .compact();
-    }
+    } // Cierre del método
 
+    /**
+     * Método que agrega un cuerpo JSON a la petición.
+     *
+     * @param request La petición.
+     * @param body El cuerpo en JSON.
+     * @return MockHttpServletRequestBuilder La petición con el cuerpo y el tipo de contenido.
+     */
     private static MockHttpServletRequestBuilder json(MockHttpServletRequestBuilder request, String body) {
         return request.contentType(MediaType.APPLICATION_JSON).content(body);
-    }
+    } // Cierre del método
 
+    /**
+     * Método que arma el JSON de un registro válido.
+     *
+     * @param name El nombre.
+     * @param email El correo.
+     * @param roles Los roles.
+     * @return String El cuerpo del registro.
+     */
     private static String registerBody(String name, String email, String... roles) {
         String roleList = String.join("\",\"", roles);
         return """
                 {"name":"%s","email":"%s","birthDate":"1995-05-20","localityId":1,"phones":[{"number":"3001234567","principal":true}],"roles":["%s"]}"""
                 .formatted(name, email, roleList);
-    }
+    } // Cierre del método
 
+    /**
+     * Método que registra una cuenta como el Orquestador.
+     *
+     * @param name El nombre.
+     * @param email El correo.
+     * @param roles Los roles.
+     * @return UUID El id de la cuenta creada, para usarla en la prueba.
+     */
     private UUID register(String name, String email, String... roles) throws Exception {
         String body = mockMvc.perform(registerRequest(registerBody(name, email, roles)))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         return UUID.fromString(objectMapper.readTree(body).get("id").asText());
-    }
+    } // Cierre del método
 
+    /**
+     * Método que activa o desactiva una cuenta como el administrador semilla.
+     *
+     * @param userId El id de la cuenta.
+     * @param action activate o deactivate.
+     * @return ResultActions El resultado, para verificar la respuesta.
+     */
     private ResultActions changeStatus(UUID userId, String action) throws Exception {
         return mockMvc.perform(json(patch(ADMIN_USERS + "/" + userId + "/" + action).header(AUTH, token(adminId, "ADMIN")),
                 "{\"reason\":\"Prueba de aceptación\"}"));
-    }
+    } // Cierre del método
 
+    /**
+     * Método que arma la petición de registro con token SERVICE.
+     *
+     * @param body El cuerpo en JSON.
+     * @return MockHttpServletRequestBuilder La petición lista para enviar.
+     */
     private MockHttpServletRequestBuilder registerRequest(String body) {
         return json(post(USERS), body).header(AUTH, token(UUID.randomUUID(), "SERVICE"));
-    }
-}
+    } // Cierre del método
+} // Cierre de la clase

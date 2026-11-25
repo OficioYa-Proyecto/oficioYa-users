@@ -8,7 +8,15 @@ import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/** RF-13. Petición para quitar un rol, tal como la ven el usuario y el administrador */
+/**
+ * Clase DTO de una petición para quitar un rol, tal como la ven el usuario y el administrador (RF-13).
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RoleRemovalResponseDTO {
@@ -21,4 +29,4 @@ public class RoleRemovalResponseDTO {
     private String adminReason;
     private LocalDateTime createdAt;
     private LocalDateTime resolvedAt;
-}
+} // Cierre de la clase

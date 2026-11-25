@@ -14,6 +14,15 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
+/**
+ * Clase de pruebas de LocalityService con el repositorio simulado (Mockito)
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
 @ExtendWith(MockitoExtension.class)
 class LocalityServiceTest {
 
@@ -22,6 +31,9 @@ class LocalityServiceTest {
     @InjectMocks
     private LocalityService localityService;
 
+    /**
+     * Prueba que se devuelve el catálogo de localidades.
+     */
     @Test
     void findAllReturnsCatalog() {
         LocalityEntity suba = new LocalityEntity();
@@ -30,5 +42,5 @@ class LocalityServiceTest {
         when(localityRepository.findAllByOrderByNameAsc()).thenReturn(List.of(suba));
 
         assertThat(localityService.findAll()).containsExactly(new LocalityDTO(11L, "Suba"));
-    }
-}
+    } // Cierre del método
+} // Cierre de la clase

@@ -7,7 +7,16 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
-/** Barrio del catálogo de zonas. Los ids son fijos (data.sql) porque otros microservicios los guardan*/
+/**
+ * Clase entidad de la tabla zones: barrio del catálogo de zonas con su localidad. Los ids son fijos
+ * porque el microservicio de Workers los guarda en sus trabajadores
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
 @Getter
 @Setter
 @Entity
@@ -22,4 +31,4 @@ public class ZoneEntity {
 
     @Column(nullable = false, length = 100)
     private String locality;
-}
+} // Cierre de la clase

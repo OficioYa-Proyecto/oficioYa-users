@@ -6,6 +6,16 @@ import lombok.Setter;
 
 import java.util.UUID;
 
+/**
+ * Clase entidad de la tabla phones: teléfono de una cuenta, con la marca de principal.
+ * Muchos teléfonos pertenecen a un UserEntity
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
 @Getter
 @Setter
 @Entity
@@ -25,4 +35,4 @@ public class PhoneEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
-}
+} // Cierre de la clase

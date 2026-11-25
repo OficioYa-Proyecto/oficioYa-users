@@ -18,10 +18,22 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Clase de pruebas de la implementación que genera MapStruct para UserEntityMapper
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
 class UserEntityMapperTest {
 
     private final UserEntityMapper mapper = new UserEntityMapperImpl();
 
+    /**
+     * Prueba que al convertir a entidad cada teléfono queda enlazado con su usuario.
+     */
     @Test
     void toEntityLinksEachPhoneToItsUser() {
         PhoneModel phone = new PhoneModel();
@@ -44,8 +56,11 @@ class UserEntityMapperTest {
         assertThat(entity.getPhones().get(0).getNumber()).isEqualTo("3001234567");
         assertThat(entity.getPhones().get(0).getUser()).isSameAs(entity);
         assertThat(entity.getRoles()).extracting(RoleEntity::getName).containsExactly("TRABAJADOR");
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que al convertir a modelo se copian todos los datos.
+     */
     @Test
     void toModelCopiesAllData() {
         PhoneEntity phone = new PhoneEntity();
@@ -76,8 +91,11 @@ class UserEntityMapperTest {
         assertThat(model.getBirthDate()).isEqualTo(LocalDate.of(1995, 5, 20));
         assertThat(model.getPhones()).extracting(PhoneModel::getNumber).containsExactly("3109876543");
         assertThat(model.getRoles()).extracting(RoleModel::getName).containsExactly("CONTRATANTE");
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que una entrada null devuelve null.
+     */
     @Test
     void nullInputsReturnNull() {
         assertThat(mapper.toModel((UserEntity) null)).isNull();
@@ -86,5 +104,5 @@ class UserEntityMapperTest {
         assertThat(mapper.toEntity((PhoneModel) null)).isNull();
         assertThat(mapper.toModel((RoleEntity) null)).isNull();
         assertThat(mapper.toEntity((RoleModel) null)).isNull();
-    }
-}
+    } // Cierre del método
+} // Cierre de la clase
