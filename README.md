@@ -9,11 +9,11 @@ Por lo tanto, debe llevar a cabo qué campos de visualización debe tener el reg
 
 ## Alcance
 
-* Registro de cuentas con rol TRABAJADOR y/o CONTRATANTE, fecha de nacimiento (mayor de edad) y zona de cobertura.
+* Registro de cuentas con rol TRABAJADOR y/o CONTRATANTE y fecha de nacimiento obligatoria (mayor de edad).
 * Perfil propio, edición del perfil, teléfonos (máximo 3, uno principal) y perfil público de otros usuarios.
-* Agregar y quitar roles conservando al menos uno.
+* Agregar el rol que falta. Para quitar un rol, el usuario lo pide con una razón y el administrador aprueba o rechaza la petición (o lo quita directamente), siempre que la cuenta conserve al menos un rol y no tenga solicitudes activas en ese rol.
 * Administración: consulta de cuentas, desactivación y reactivación con motivo.
-* Catálogo de zonas (barrios) y de localidades de Bogotá (zona de cobertura).
+* Catálogo de zonas (barrios) y de localidades de Bogotá (ordenado alfabéticamente). El trabajador y el contratante pueden elegir y cambiar su localidad; el administrador no tiene localidad.
 * Consultas para otros microservicios (Identity, Worker, Requests, Reporting).
 
 Los requerimientos y criterios de aceptación completos están en [requirements.md](oficioYa-users/docs/requirements/requirements.md) y [acceptance-criteria.md](oficioYa-users/docs/requirements/acceptance-criteria.md).
@@ -35,7 +35,7 @@ Base: `/api/v1`. Todos requieren token salvo los marcados como públicos.
 | Método | Ruta | Acceso | RF |
 |---|---|---|---|
 | POST | `/users` | SERVICE | RF-01 |
-| POST / DELETE | `/users/me/roles/{role}` | Usuario | RF-02, RF-13 |
+| POST | `/users/me/roles/{role}` | Usuario | RF-02 |
 | GET / PATCH | `/users/me` | Usuario | RF-03, RF-04 |
 | GET / POST | `/users/me/phones` | Usuario | RF-04 |
 | PATCH / DELETE | `/users/me/phones/{phoneId}` | Usuario | RF-04 |
@@ -46,8 +46,11 @@ Base: `/api/v1`. Todos requieren token salvo los marcados como públicos.
 | GET | `/users?ids=` | Autenticado | RF-10 |
 | GET | `/users/by-email` y `/users/{id}/account` | SERVICE | RF-11 |
 | GET | `/users/stats/accounts?from=&to=` | ADMIN | RF-12 |
+| POST / GET | `/users/me/role-removal-requests` | Usuario | RF-13 |
+| GET | `/admin/role-removal-requests?status=&userId=` | ADMIN | RF-13 |
+| PATCH | `/admin/role-removal-requests/{id}/approve` y `/reject` | ADMIN | RF-13 |
+| DELETE | `/admin/users/{id}/roles/{role}` | ADMIN | RF-13 |
 | GET | `/localities` | Público | RF-14 |
-| GET | `/localities/{id}/workers` | Autenticado | RF-14 |
 | DELETE | `/users/{id}` | SERVICE | Compensación |
 
 Sin token se recibe 401 y con un rol que no corresponde se recibe 403. Los errores siempre responden con el formato `timestamp`, `status`, `error`, `message` y `route`.
@@ -64,6 +67,7 @@ Variables de entorno (ver [.env.example](oficioYa-users/.env.example)):
 | `JWT_SECRET` | Clave compartida con Identity, en Base64 |
 | `WORKERS_URL`, `REQUESTS_URL` | URL de los microservicios de Worker y Requests |
 | `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PHONE` | Cuenta de administrador que se crea al iniciar |
+|`ADMIN_NOTIFICATION_EMAIL` | Correo real del administrador donde llegan los avisos de peticiones quitar rol |
 
 Con H2 en memoria, sin instalar PostgreSQL:
 
@@ -94,7 +98,7 @@ La colección [oficioya-users.postman_collection.json](oficioYa-users/docs/ofici
 2. Poner en la variable `jwtSecret` el mismo valor de `JWT_SECRET`. Los tokens de usuario, administrador y SERVICE se generan solos.
 3. Ejecutar en orden con *Run collection*.
 
-Quitar un rol consulta las solicitudes activas en Requests, así que ese microservicio debe estar disponible.
+Cuando el administrador quita un rol, Users consulta las solicitudes activas en Requests y, si es TRABAJADOR, pausa el perfil en Worker; por eso esos microservicios deben estar disponibles.
 
 Evidencias: [Swagger](oficioYa-users/docs/evidencias/swagger.png) y [ejecución en Postman](oficioYa-users/docs/evidencias/postman-run.png).
 

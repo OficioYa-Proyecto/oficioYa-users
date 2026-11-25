@@ -22,9 +22,9 @@
                   "pm.test('Responde 201', () => pm.response.to.have.status(201));",
                   "const res = pm.response.json();",
                   "pm.collectionVariables.set('userId', res.id);",
-                  "pm.test('Correo enmascarado', () => pm.expect(res.email).to.match(/^\\*{5}@/));",
+                  "pm.test('Correo enmascarado', () => pm.expect(res.email).to.match(/^[^*]\\*\\*[^*]?@/));",
                   "pm.test('Guarda la fecha de nacimiento (RF-01)', () => pm.expect(res.birthDate).to.eql('1995-05-20'));",
-                  "pm.test('Guarda la zona de cobertura (RF-14)', () => pm.expect(res.locality).to.eql({ id: 1, name: 'Usaquén' }));"
+                  "pm.test('Guarda la localidad del trabajador (RF-14)', () => pm.expect(res.locality.id).to.eql(1));"
                 ]
               }
             },
@@ -209,7 +209,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Menor Pérez\",\n  \"email\": \"menor{{$timestamp}}@mail.com\",\n  \"birthDate\": \"{{minorBirthDate}}\",\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"TRABAJADOR\"\n  ]\n}",
+              "raw": "{\n  \"name\": \"Menor Pérez\",\n  \"email\": \"menor{{$timestamp}}@mail.com\",\n  \"birthDate\": \"{{minorBirthDate}}\",\n  \"localityId\": 1,\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"TRABAJADOR\"\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -258,7 +258,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Ana Pérez\",\n  \"email\": \"sinlocalidad{{$timestamp}}@mail.com\",\n  \"birthDate\": \"1995-05-20\",\n  \"localityId\": 999,\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"TRABAJADOR\"\n  ]\n}",
+              "raw": "{\n  \"name\": \"Ana Pérez\",\n  \"email\": \"sinlocalidad{{$timestamp}}@mail.com\",\n  \"birthDate\": \"1995-05-20\",\n  \"localityId\": 999,\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"CONTRATANTE\"\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -306,7 +306,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Ana Pérez\",\n  \"email\": \"admin{{$timestamp}}@mail.com\",\n  \"birthDate\": \"1995-05-20\",\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"ADMIN\"\n  ]\n}",
+              "raw": "{\n  \"name\": \"Ana Pérez\",\n  \"email\": \"admin{{$timestamp}}@mail.com\",\n  \"birthDate\": \"1995-05-20\",\n  \"localityId\": 1,\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"ADMIN\"\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -354,7 +354,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Ana Pérez\",\n  \"email\": \"sinservicio{{$timestamp}}@mail.com\",\n  \"birthDate\": \"1995-05-20\",\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"TRABAJADOR\"\n  ]\n}",
+              "raw": "{\n  \"name\": \"Ana Pérez\",\n  \"email\": \"sinservicio{{$timestamp}}@mail.com\",\n  \"birthDate\": \"1995-05-20\",\n  \"localityId\": 1,\n  \"phones\": [\n    {\n      \"number\": \"3001234567\",\n      \"principal\": true\n    }\n  ],\n  \"roles\": [\n    \"TRABAJADOR\"\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1406,200 +1406,7 @@
           "response": []
         },
         {
-          "name": "15.9 Error: quitar rol ADMIN",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users/me/roles/ADMIN",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "users",
-                "me",
-                "roles",
-                "ADMIN"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "15.10 Quitar rol CONTRATANTE (consulta Solicitudes, no llama a Worker)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Roles actualizados', () => pm.expect(pm.response.json().roles).to.have.members([\"TRABAJADOR\"]));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users/me/roles/CONTRATANTE",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "users",
-                "me",
-                "roles",
-                "CONTRATANTE"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "15.11 Error: quitar el último rol",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users/me/roles/TRABAJADOR",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "users",
-                "me",
-                "roles",
-                "TRABAJADOR"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Localidades (zona de cobertura)",
-      "item": [
-        {
-          "name": "15.12 Consultar localidades (sin token)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
-                  "const res = pm.response.json();",
-                  "pm.test('Las 20 localidades de Bogotá en orden', () => {",
-                  "    pm.expect(res).to.have.lengthOf(20);",
-                  "    pm.expect(res[0]).to.eql({ id: 1, name: 'Usaquén' });",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/localities",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "localities"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "15.13 Trabajadores de la localidad 1",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Incluye al usuario registrado en Usaquén', () => pm.expect(pm.response.json()).to.include(pm.collectionVariables.get('userId')));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/localities/1/workers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "localities",
-                "1",
-                "workers"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "15.14 Cambiar zona de cobertura",
+          "name": "15.8.1 Cambiar localidad (es contratante)",
           "event": [
             {
               "listen": "test",
@@ -1649,45 +1456,7 @@
           "response": []
         },
         {
-          "name": "15.15 Trabajadores de la nueva localidad",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Ahora aparece en Chapinero', () => pm.expect(pm.response.json()).to.include(pm.collectionVariables.get('userId')));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/localities/2/workers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "localities",
-                "2",
-                "workers"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "15.16 Error: editar con localidad que no existe",
+          "name": "15.8.2 Error: editar con localidad que no existe",
           "event": [
             {
               "listen": "test",
@@ -1736,14 +1505,153 @@
           "response": []
         },
         {
-          "name": "15.17 Error: trabajadores de una localidad que no existe",
+          "name": "15.9 Error: pedir quitar rol ADMIN",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Responde 404', () => pm.response.to.have.status(404));"
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"ADMIN\",\n  \"reason\": \"Ya no quiero ser administrador\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me/role-removal-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me",
+                "role-removal-requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15.10 Pedir quitar rol CONTRATANTE",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "const res = pm.response.json();",
+                  "pm.test('Queda pendiente', () => pm.expect(res.status).to.eql('PENDING'));",
+                  "pm.collectionVariables.set('roleRequestId', res.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"CONTRATANTE\",\n  \"reason\": \"Ya no necesito contratar servicios\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me/role-removal-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me",
+                "role-removal-requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15.11 Error: segunda petición pendiente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"TRABAJADOR\",\n  \"reason\": \"Tampoco quiero ser trabajador\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me/role-removal-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me",
+                "role-removal-requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15.11.1 Consultar mis peticiones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Trae la pendiente', () => pm.expect(pm.response.json()[0].status).to.eql('PENDING'));"
                 ]
               }
             }
@@ -1757,16 +1665,372 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/localities/999/workers",
+              "raw": "{{baseUrl}}/api/v1/users/me/role-removal-requests",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "localities",
-                "999",
-                "workers"
+                "users",
+                "me",
+                "role-removal-requests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15.11.2 Error: usuario no puede aprobar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Me apruebo yo mismo\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/role-removal-requests/{{roleRequestId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "role-removal-requests",
+                "{{roleRequestId}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15.11.3 Admin lista peticiones pendientes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Incluye la petición', () => pm.expect(pm.response.json().map(r => r.id)).to.include(pm.collectionVariables.get('roleRequestId')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/role-removal-requests?status=PENDING",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "role-removal-requests"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15.11.4 Admin aprueba la petición (consulta Solicitudes, no llama a Worker)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Queda aprobada', () => pm.expect(pm.response.json().status).to.eql('APPROVED'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"El usuario solo ofrece servicios\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/role-removal-requests/{{roleRequestId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "role-removal-requests",
+                "{{roleRequestId}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15.11.5 Error: aprobar una petición ya resuelta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Intento repetido de aprobar\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/role-removal-requests/{{roleRequestId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "role-removal-requests",
+                "{{roleRequestId}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15.11.6 Perfil solo con TRABAJADOR",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Roles actualizados', () => pm.expect(pm.response.json().roles).to.have.members([\"TRABAJADOR\"]));",
+                  "pm.test('Conserva la localidad al quitar CONTRATANTE (RF-14)', () => pm.expect(pm.response.json().locality).to.not.be.undefined);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15.11.7 Error: pedir quitar el último rol",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"TRABAJADOR\",\n  \"reason\": \"Ya no quiero ser trabajador\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me/role-removal-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me",
+                "role-removal-requests"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Localidades",
+      "item": [
+        {
+          "name": "15.12 Consultar localidades (sin token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('Las 20 localidades de Bogotá en orden alfabético', () => {",
+                  "    pm.expect(res).to.have.lengthOf(20);",
+                  "    const names = res.map(l => l.name);",
+                  "    pm.expect(names).to.eql([...names].sort((a, b) => a.localeCompare(b, 'es')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/localities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "localities"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15.14 El trabajador cambia su localidad",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Queda en Chapinero (RF-14)', () => pm.expect(pm.response.json().locality).to.eql({ id: 2, name: 'Chapinero' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"localityId\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
               ]
             }
           },
@@ -2462,6 +2726,10 @@
     },
     {
       "key": "minorBirthDate",
+      "value": ""
+    },
+    {
+      "key": "roleRequestId",
       "value": ""
     }
   ]

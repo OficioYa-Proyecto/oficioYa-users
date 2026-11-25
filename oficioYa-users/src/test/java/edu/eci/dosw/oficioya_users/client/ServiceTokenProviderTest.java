@@ -10,10 +10,22 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Clase de pruebas de ServiceTokenProvider
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
 class ServiceTokenProviderTest {
 
     private static final String SECRET = "IadhiSp/AVyloXuE15l29oZzpucys4NEfqpHn6PEMeQ=";
 
+    /**
+     * Prueba que el token está firmado con el secreto y trae el rol SERVICE en el claim de roles configurado
+     */
     @Test
     void bearerIsSignedServiceTokenWithConfiguredRolesClaim() {
         String bearer = new ServiceTokenProvider(SECRET, "roles").bearer();
@@ -27,5 +39,5 @@ class ServiceTokenProviderTest {
         assertThat(claims.getSubject()).isEqualTo(java.util.UUID.nameUUIDFromBytes("oficioya-users".getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString());
         assertThat(claims.get("roles", List.class)).containsExactly("SERVICE");
         assertThat(claims.getExpiration()).isInTheFuture();
-    }
-}
+    } // Cierre del método
+} // Cierre de la clase

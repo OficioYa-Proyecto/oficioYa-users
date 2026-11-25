@@ -6,6 +6,17 @@ import lombok.Setter;
 
 import java.util.UUID;
 
+/**
+ * Clase entidad de la tabla roles (ADMIN, CONTRATANTE, TRABAJADOR).
+ * Se relaciona con UserEntity mediante la
+ * tabla intermedia users_roles.
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
 @Getter
 @Setter
 @Entity
@@ -18,4 +29,4 @@ public class RoleEntity {
 
     @Column(nullable = false, unique = true, length = 50)
     private String name;
-}
+} // Cierre de la clase

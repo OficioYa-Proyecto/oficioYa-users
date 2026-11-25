@@ -1,7 +1,6 @@
 package edu.eci.dosw.oficioya_users.controller;
 
 import edu.eci.dosw.oficioya_users.dto.LocalityDTO;
-import edu.eci.dosw.oficioya_users.exception.ResourceNotFoundException;
 import edu.eci.dosw.oficioya_users.security.SecurityConfig;
 import edu.eci.dosw.oficioya_users.service.LocalityService;
 import io.jsonwebtoken.Jwts;
@@ -25,7 +24,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** RF-14. El catálogo es público; los trabajadores de una localidad exigen token. Seguridad real. */
+/**
+ * Clase de pruebas de LocalityController con la seguridad real y el servicio simulado
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
 @WebMvcTest(LocalityController.class)
 @Import(SecurityConfig.class)
 @TestPropertySource(properties = "jwt.secret=" + LocalityControllerTest.SECRET)
@@ -39,6 +46,11 @@ class LocalityControllerTest {
     @MockBean
     private LocalityService localityService;
 
+    /**
+     * Método que firma un token de prueba de un contratante.
+     *
+     * @return String El encabezado "Bearer <token>".
+     */
     private static String token() {
         return "Bearer " + Jwts.builder()
                 .subject(UUID.randomUUID().toString())
@@ -46,8 +58,11 @@ class LocalityControllerTest {
                 .expiration(new Date(System.currentTimeMillis() + 60_000))
                 .signWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET)))
                 .compact();
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que el catálogo de localidades se consulta sin token.
+     */
     @Test
     void catalogIsPublic() throws Exception {
         when(localityService.findAll()).thenReturn(List.of(new LocalityDTO(1L, "Usaquén")));
@@ -56,30 +71,15 @@ class LocalityControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].name").value("Usaquén"));
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que la ruta /localities/{id}/workers ya no existe (404).
+     */
     @Test
-    void workersOfLocalityReturnsIds() throws Exception {
-        UUID workerId = UUID.randomUUID();
-        when(localityService.findWorkerIds(1L)).thenReturn(List.of(workerId));
-
+    void workersOfLocalityEndpointWasRemoved() throws Exception {
         mockMvc.perform(get(LOCALITIES + "/1/workers").header("Authorization", token()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0]").value(workerId.toString()));
-    }
-
-    @Test
-    void workersOfMissingLocalityReturns404() throws Exception {
-        when(localityService.findWorkerIds(99L)).thenThrow(new ResourceNotFoundException("Localidad no encontrada: 99"));
-
-        mockMvc.perform(get(LOCALITIES + "/99/workers").header("Authorization", token()))
                 .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void workersOfLocalityRequireToken() throws Exception {
-        mockMvc.perform(get(LOCALITIES + "/1/workers"))
-                .andExpect(status().isUnauthorized());
         verifyNoInteractions(localityService);
-    }
-}
+    } // Cierre del método
+} // Cierre de la clase
