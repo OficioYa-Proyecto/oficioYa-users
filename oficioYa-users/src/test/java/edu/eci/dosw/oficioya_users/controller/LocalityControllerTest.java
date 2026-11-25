@@ -24,7 +24,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** RF-14. El catálogo es público. Seguridad real. */
+/**
+ * Clase de pruebas de LocalityController con la seguridad real y el servicio simulado
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
 @WebMvcTest(LocalityController.class)
 @Import(SecurityConfig.class)
 @TestPropertySource(properties = "jwt.secret=" + LocalityControllerTest.SECRET)
@@ -38,6 +46,11 @@ class LocalityControllerTest {
     @MockBean
     private LocalityService localityService;
 
+    /**
+     * Método que firma un token de prueba de un contratante.
+     *
+     * @return String El encabezado "Bearer <token>".
+     */
     private static String token() {
         return "Bearer " + Jwts.builder()
                 .subject(UUID.randomUUID().toString())
@@ -45,8 +58,11 @@ class LocalityControllerTest {
                 .expiration(new Date(System.currentTimeMillis() + 60_000))
                 .signWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET)))
                 .compact();
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que el catálogo de localidades se consulta sin token.
+     */
     @Test
     void catalogIsPublic() throws Exception {
         when(localityService.findAll()).thenReturn(List.of(new LocalityDTO(1L, "Usaquén")));
@@ -55,12 +71,15 @@ class LocalityControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].name").value("Usaquén"));
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que la ruta /localities/{id}/workers ya no existe (404).
+     */
     @Test
     void workersOfLocalityEndpointWasRemoved() throws Exception {
         mockMvc.perform(get(LOCALITIES + "/1/workers").header("Authorization", token()))
                 .andExpect(status().isNotFound());
         verifyNoInteractions(localityService);
-    }
-}
+    } // Cierre del método
+} // Cierre de la clase

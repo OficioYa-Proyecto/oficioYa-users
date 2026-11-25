@@ -21,7 +21,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** Catálogo es público: se prueba sin token y con la seguridad real. */
+/**
+ * Clase de pruebas de ZoneController con la seguridad real y el servicio simulado
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
 @WebMvcTest(ZoneController.class)
 @Import(SecurityConfig.class)
 class ZoneControllerTest {
@@ -34,6 +42,9 @@ class ZoneControllerTest {
     @MockBean
     private ZoneService zoneService;
 
+    /**
+     * Prueba que sin ids se devuelve todo el catálogo y no se exige token.
+     */
     @Test
     void withoutIdsReturnsWholeCatalogWithoutToken() throws Exception {
         when(zoneService.findAll()).thenReturn(List.of(CEDRITOS));
@@ -43,8 +54,11 @@ class ZoneControllerTest {
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].name").value("Cedritos"))
                 .andExpect(jsonPath("$[0].locality").value("Usaquén"));
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que con ids vacíos se devuelve todo el catálogo.
+     */
     @Test
     void emptyIdsReturnsWholeCatalog() throws Exception {
         when(zoneService.findAll()).thenReturn(List.of(CEDRITOS));
@@ -53,8 +67,11 @@ class ZoneControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Cedritos"));
         verify(zoneService).findAll();
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que con ids se devuelven las zonas pedidas.
+     */
     @Test
     void withIdsReturnsRequestedZones() throws Exception {
         when(zoneService.findByIds(List.of(1L, 2L))).thenReturn(List.of(CEDRITOS));
@@ -62,7 +79,7 @@ class ZoneControllerTest {
         mockMvc.perform(get(ZONES).param("ids", "1,2"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Cedritos"));
-    }
+    } // Cierre del método
 
     @Test
     void tooManyIdsReturns400() throws Exception {
@@ -81,10 +98,13 @@ class ZoneControllerTest {
         verifyNoInteractions(zoneService);
     }
 
+    /**
+     * Prueba que solo GET es público en /zones: un POST sin token responde 401.
+     */
     @Test
     void onlyGetIsPublic() throws Exception {
         mockMvc.perform(post(ZONES))
                 .andExpect(status().isUnauthorized());
         verifyNoInteractions(zoneService);
-    }
-}
+    } // Cierre del método
+} // Cierre de la clase

@@ -38,7 +38,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** Prueba los endpoints con la seguridad JWT real (filtro + reglas de acceso). */
+/**
+ * Clase de pruebas de UserController con la seguridad real (SecurityConfig) y el servicio simulado: permisos
+ * por rol, uso del id del token y formato de los errores
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
 @WebMvcTest(UserController.class)
 @Import(SecurityConfig.class)
 @TestPropertySource(properties = "jwt.secret=" + UserControllerTest.SECRET)
@@ -57,6 +66,15 @@ class UserControllerTest {
 
     private final UUID userId = UUID.randomUUID();
 
+    /**
+     * Método que firma un token JWT de prueba.
+     *
+     * @param subject El sub del token.
+     * @param roles Los roles.
+     * @param secret El secreto en Base64.
+     * @param ttlMillis La duración en milisegundos (negativa para un token expirado).
+     * @return String El encabezado "Bearer <token>".
+     */
     private static String bearer(String subject, List<String> roles, String secret, long ttlMillis) {
         return "Bearer " + Jwts.builder()
                 .subject(subject)
@@ -64,18 +82,33 @@ class UserControllerTest {
                 .expiration(new Date(System.currentTimeMillis() + ttlMillis))
                 .signWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret)))
                 .compact();
-    }
+    } // Cierre del método
 
+    /**
+     * Método que firma un token válido para el usuario de la prueba.
+     *
+     * @param roles Los roles del token.
+     * @return String El encabezado "Bearer <token>".
+     */
     private String token(String... roles) {
         return bearer(userId.toString(),List.of(roles), SECRET, 60_000);
-    }
+    } // Cierre del método
 
+    /**
+     * Método que crea una cuenta de respuesta de ejemplo.
+     *
+     * @param name El nombre.
+     * @return UserResponseDTO La cuenta, para simular el servicio.
+     */
     private static UserResponseDTO response(String name) {
         UserResponseDTO dto = new UserResponseDTO();
         dto.setName(name);
         return dto;
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que el registro solo lo puede hacer el rol SERVICE.
+     */
     @Test
     void registerRequiresServiceRole() throws Exception {
         when(userService.register(any(UserRequestDTO.class))).thenReturn(response("Ana"));
@@ -90,8 +123,11 @@ class UserControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("Ana"))
                 .andExpect(jsonPath("$.email").doesNotExist());
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que la eliminación (compensación) solo la puede hacer el rol SERVICE.
+     */
     @Test
     void deleteOnlyAllowedForService() throws Exception {
         UUID id = UUID.randomUUID();
@@ -100,8 +136,11 @@ class UserControllerTest {
         verifyNoInteractions(userService);
         mockMvc.perform(delete("/api/v1/users/{id}", id).header(AUTH, token("SERVICE")))
                 .andExpect(status().isNoContent());
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que las estadísticas solo las puede consultar el administrador.
+     */
     @Test
     void accountStatsOnlyAllowedForAdmin() throws Exception {
         when(userService.getAccountStats(LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30)))
@@ -121,15 +160,18 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.deactivated.total").value(40))
                 .andExpect(jsonPath("$.deactivated.trabajador").value(15))
                 .andExpect(jsonPath("$.deactivated.contratante").value(28));
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que las estadísticas rechazan fechas con formato inválido (400).
+     */
     @Test
     void accountStatsRejectsDateWithWrongFormat() throws Exception {
         mockMvc.perform(get(STATS).param("from", "01/11/2026").param("to", "2026-11-30").header(AUTH, token("ADMIN")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Valor inválido para 'from'"));
         verifyNoInteractions(userService);
-    }
+    } // Cierre del método
 
     @Test
     void protectedEndpointWithoutTokenReturns401() throws Exception {
@@ -169,6 +211,9 @@ class UserControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    /**
+     * Prueba que las consultas internas por correo y por id aceptan el rol SERVICE.
+     */
     @Test
     void accountQueriesAllowServiceRole() throws Exception {
         UUID id = UUID.randomUUID();
@@ -185,8 +230,11 @@ class UserControllerTest {
         mockMvc.perform(get("/api/v1/users/{id}/account", id).header(AUTH, token("SERVICE")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accountStatus").value("INACTIVE"));
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que las consultas internas son solo para el rol SERVICE (403).
+     */
     @Test
     void accountQueriesAreOnlyForService() throws Exception {
         UUID id = UUID.randomUUID();
@@ -199,7 +247,7 @@ class UserControllerTest {
         mockMvc.perform(get("/api/v1/users/by-email").param("email", "ana@mail.com"))
                 .andExpect(status().isUnauthorized());
         verifyNoInteractions(userService);
-    }
+    } // Cierre del método
 
     @Test
     void accountQueryOfMissingUserReturns404() throws Exception {
@@ -209,6 +257,9 @@ class UserControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    /**
+     * Prueba que un usuario que no es administrador no puede usar las rutas de administración.
+     */
     @Test
     void nonAdminCannotUseAdminEndpoints() throws Exception {
         mockMvc.perform(get("/api/v1/admin/users").header(AUTH, token("TRABAJADOR")))
@@ -222,7 +273,7 @@ class UserControllerTest {
                         .compact()))
                 .andExpect(status().isForbidden());
         verifyNoInteractions(userService);
-    }
+    } // Cierre del método
 
     @Test
     void registerWithInvalidDataReturns400() throws Exception {
@@ -232,6 +283,9 @@ class UserControllerTest {
         verifyNoInteractions(userService);
     }
 
+    /**
+     * Prueba que el perfil propio usa el id que viene en el token.
+     */
     @Test
     void ownProfileUsesIdFromToken() throws Exception {
         when(userService.getOwnProfile(userId)).thenReturn(response("Ana"));
@@ -239,8 +293,11 @@ class UserControllerTest {
         mockMvc.perform(get("/api/v1/users/me").header(AUTH, token("TRABAJADOR")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Ana"));
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que la edición del perfil propio responde el perfil actualizado.
+     */
     @Test
     void updateOwnProfile() throws Exception {
         when(userService.updateOwnProfile(eq(userId), any(UserUpdateDTO.class))).thenReturn(response("Ana María"));
@@ -249,16 +306,22 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Ana María\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Ana María"));
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que agregar un rol usa el id del token.
+     */
     @Test
     void addRole() throws Exception {
         when(userService.addRole(userId, RoleName.CONTRATANTE)).thenReturn(response("Ana"));
 
         mockMvc.perform(post("/api/v1/users/me/roles/CONTRATANTE").header(AUTH, token("TRABAJADOR")))
                 .andExpect(status().isOk());
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que el perfil público se consulta con token.
+     */
     @Test
     void publicProfile() throws Exception {
         UUID otherId = UUID.randomUUID();
@@ -267,8 +330,11 @@ class UserControllerTest {
         mockMvc.perform(get("/api/v1/users/{id}", otherId).header(AUTH, token("CONTRATANTE")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Luis"));
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que la consulta de varios usuarios acepta el rol SERVICE.
+     */
     @Test
     void usersByIdsAllowsServiceRole() throws Exception {
         UUID otherId = UUID.randomUUID();
@@ -277,7 +343,7 @@ class UserControllerTest {
         mockMvc.perform(get("/api/v1/users").param("ids", otherId.toString()).header(AUTH, token("SERVICE")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Luis"));
-    }
+    } // Cierre del método
 
     @Test
     void usersByIdsWithoutTokenReturns401() throws Exception {
@@ -292,6 +358,9 @@ class UserControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    /**
+     * Prueba que el administrador lista y consulta cuentas.
+     */
     @Test
     void adminListsAndSeesUsers() throws Exception {
         UUID id = UUID.randomUUID();
@@ -304,16 +373,22 @@ class UserControllerTest {
         mockMvc.perform(get("/api/v1/admin/users/{id}", id).header(AUTH, token("ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Luis"));
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que un rol que ya trae el prefijo ROLE_ se acepta igual.
+     */
     @Test
     void roleWithPrefixIsAcceptedAsIs() throws Exception {
         when(userService.findAll()).thenReturn(List.of(response("Ana")));
 
         mockMvc.perform(get("/api/v1/admin/users").header(AUTH, token("ROLE_ADMIN")))
                 .andExpect(status().isOk());
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que el administrador desactiva y activa cuentas enviando un motivo.
+     */
     @Test
     void adminDeactivatesAndActivatesWithReason() throws Exception {
         UUID id = UUID.randomUUID();
@@ -332,7 +407,7 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"Caso resuelto con el usuario\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accountStatus").value("ACTIVE"));
-    }
+    } // Cierre del método
 
     @Test
     void deactivateWithoutReasonReturns400() throws Exception {
@@ -369,6 +444,9 @@ class UserControllerTest {
         verifyNoInteractions(userService);
     }
 
+    /**
+     * Prueba que las rutas de teléfonos usan el id que viene en el token.
+     */
     @Test
     void phoneEndpointsUseIdFromToken() throws Exception {
         UUID phoneId = UUID.randomUUID();
@@ -388,8 +466,11 @@ class UserControllerTest {
                 .andExpect(status().isOk());
         mockMvc.perform(delete("/api/v1/users/me/phones/{id}", phoneId).header(AUTH, token("TRABAJADOR")))
                 .andExpect(status().isOk());
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que la respuesta 401 tiene formato ApiError.
+     */
     @Test
     void unauthorizedResponseUsesApiErrorFormat() throws Exception {
         mockMvc.perform(get("/api/v1/users/me"))
@@ -397,16 +478,22 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.message").value("Token ausente, inválido o expirado"))
                 .andExpect(jsonPath("$.route").value("/api/v1/users/me"));
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que la respuesta 403 tiene formato ApiError.
+     */
     @Test
     void forbiddenResponseUsesApiErrorFormat() throws Exception {
         mockMvc.perform(get("/api/v1/admin/users").header(AUTH, token("TRABAJADOR")))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403))
                 .andExpect(jsonPath("$.error").value("Forbidden"));
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que las excepciones de negocio se convierten en ApiError con su código.
+     */
     @Test
     void businessExceptionsAreTranslatedToApiError() throws Exception {
         UUID missing = UUID.randomUUID();
@@ -422,7 +509,7 @@ class UserControllerTest {
         mockMvc.perform(post("/api/v1/users").header(AUTH, token("SERVICE")).contentType(MediaType.APPLICATION_JSON).content(REGISTER_BODY))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("Ya existe una cuenta con ese correo"));
-    }
+    } // Cierre del método
 
     @Test
     void malformedInputReturns400WithApiError() throws Exception {
@@ -436,11 +523,14 @@ class UserControllerTest {
         verifyNoInteractions(userService);
     }
 
+    /**
+     * Prueba que la ruta para que el usuario se quite un rol ya no existe (405).
+     */
     @Test
     void userCannotRemoveOwnRoleAnymore() throws Exception {
         mockMvc.perform(delete("/api/v1/users/me/roles/TRABAJADOR").header(AUTH, token("TRABAJADOR", "CONTRATANTE")))
                 .andExpect(status().isMethodNotAllowed());
-    }
+    } // Cierre del método
 
     @Test
     void unexpectedErrorsReturn500WithoutDetails() throws Exception {
@@ -450,4 +540,4 @@ class UserControllerTest {
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.message").value("Error interno del servidor"));
     }
-}
+} // Cierre de la clase

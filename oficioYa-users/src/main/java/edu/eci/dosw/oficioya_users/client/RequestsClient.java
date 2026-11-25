@@ -14,7 +14,17 @@ import org.springframework.web.client.RestClientException;
 import java.time.Duration;
 import java.util.UUID;
 
-/** Integración con Servicios **/
+/**
+ * Clase que se comunica con el microservicio de Servicios (solicitudes).
+ * [La usa UserService para saber si una cuenta tiene solicitudes activas antes de quitarle un rol (RF-13).
+ * Cada llamada lleva el token SERVICE de ServiceTokenProvider]
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
 @Slf4j
 @Component
 public class RequestsClient {
@@ -23,6 +33,14 @@ public class RequestsClient {
     private final RestClient restClient;
     private final ServiceTokenProvider tokenProvider;
 
+    /**
+     * Constructor que usa Spring: arma el cliente HTTP con la URL de Servicios y un tiempo límite
+     *
+     * @param builder El constructor de RestClient que provee Spring
+     * @param url La URL base del microservicio de Servicios
+     * @param timeoutSeconds Los segundos máximos de conexión y de lectura
+     * @param tokenProvider El proveedor del token SERVICE
+     */
     @Autowired
     public RequestsClient(RestClient.Builder builder,
                         @Value("${requests.url:http://localhost:8081}") String url,
@@ -30,16 +48,37 @@ public class RequestsClient {
                         ServiceTokenProvider tokenProvider) {
         this(builder.baseUrl(url).requestFactory(timeoutFactory(Duration.ofSeconds(timeoutSeconds))).build(),
                 tokenProvider);
-    }
+    } // Cierre del constructor
 
+    /**
+     * Constructor que recibe el cliente HTTP ya armado para poder probar la
+     * clase con un servidor simulado
+     *
+     * @param restClient El cliente HTTP
+     * @param tokenProvider El proveedor del token SERVICE
+     */
     RequestsClient(RestClient restClient, ServiceTokenProvider tokenProvider) {
         this.restClient = restClient;
         this.tokenProvider = tokenProvider;
-    }
+    } // Cierre del constructor
 
+    /**
+     * Record que representa la respuesta de Servicios
+     *
+     * @param active La cantidad de solicitudes activas
+     */
     record ActiveRequests(Long active) {
-    }
+    } // Cierre del record
 
+    /**
+     * Método que consulta cuántas solicitudes activas (PENDING, ACCEPTED, CONFLICT)
+     * tiene una cuenta en un rol
+     *
+     * @param userId El id de la cuenta
+     * @param role El rol que se revisa (CONTRATANTE o TRABAJADOR)
+     * @return long La cantidad de solicitudes activas para impedir quitar el rol
+     * mientras haya trabajos en curso
+     */
     public long countActive(UUID userId, RoleName role) {
         ActiveRequests body;
         try {
@@ -60,12 +99,19 @@ public class RequestsClient {
             throw new ServiceUnavailableException(UNAVAILABLE);
         }
         return body.active();
-    }
+    } // Cierre del método
 
+    /**
+     * Método que crea la fábrica de peticiones HTTP con tiempo límite
+     *
+     * @param timeout El tiempo máximo de conexión y de lectura
+     * @return SimpleClientHttpRequestFactory La fábrica configurada para que una petición no se quede
+     *         esperando indefinidamente
+     */
     private static SimpleClientHttpRequestFactory timeoutFactory(Duration timeout) {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(timeout);
         factory.setReadTimeout(timeout);
         return factory;
-    }
-}
+    } // Cierre del método
+} // Cierre de la clase

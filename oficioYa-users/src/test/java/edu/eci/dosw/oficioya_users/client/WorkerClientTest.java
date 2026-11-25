@@ -23,6 +23,15 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+/**
+ * Clase de pruebas de WorkerClient con un servidor HTTP simulado (MockRestServiceServer)
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
 class WorkerClientTest {
 
     private static final String SECRET = "IadhiSp/AVyloXuE15l29oZzpucys4NEfqpHn6PEMeQ=";
@@ -32,13 +41,20 @@ class WorkerClientTest {
     private MockRestServiceServer server;
     private WorkerClient client;
 
+    /**
+     * Método que se ejecuta antes de cada prueba y prepara el servidor simulado y el cliente con un
+     * ServiceTokenProvider real
+     */
     @BeforeEach
     void setUp() {
         RestClient.Builder builder = RestClient.builder().baseUrl("http://worker");
         server = MockRestServiceServer.bindTo(builder).build();
         client = new WorkerClient(builder.build(), new ServiceTokenProvider(SECRET, "roles"));
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que se envía el token SERVICE y se devuelve el id del perfil de trabajador
+     */
     @Test
     void findWorkerIdByUserReturnsIdUsingServiceToken() {
         server.expect(requestTo(BY_USER + userId))
@@ -46,7 +62,7 @@ class WorkerClientTest {
                 .andRespond(withSuccess("{\"id\":\"w-1\"}", MediaType.APPLICATION_JSON));
 
         assertThat(client.findWorkerIdByUser(userId)).contains("w-1");
-    }
+    } // Cierre del método
 
     @Test
     void findWorkerIdByUserReturnsEmptyOn404() {
@@ -62,6 +78,9 @@ class WorkerClientTest {
         assertThrows(ServiceUnavailableException.class, () -> client.findWorkerIdByUser(userId));
     }
 
+    /**
+     * Prueba que se envía el nuevo estado del perfil a Worker
+     */
     @Test
     void updateStatusSendsNewStatus() {
         server.expect(requestTo("http://worker/api/v1/workers/w-1/status"))
@@ -71,5 +90,5 @@ class WorkerClientTest {
 
         client.updateStatus("w-1", WorkerClient.PAUSED);
         server.verify();
-    }
-}
+    } // Cierre del método
+} // Cierre de la clase

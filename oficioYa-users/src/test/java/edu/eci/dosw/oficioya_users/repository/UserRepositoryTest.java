@@ -22,6 +22,15 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+/**
+ * Clase de pruebas de UserRepository con una base de datos en memoria (@DataJpaTest)
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
 @DataJpaTest
 class UserRepositoryTest {
 
@@ -32,6 +41,13 @@ class UserRepositoryTest {
     @Autowired
     private TestEntityManager entityManager;
 
+    /**
+     * Método que guarda una cuenta de prueba con dos teléfonos (uno principal) y un rol de prueba.
+     *
+     * @param email El correo.
+     * @param status El estado de la cuenta.
+     * @return UserEntity La cuenta guardada.
+     */
     private UserEntity newUser(String email, AccountStatus status) {
         RoleEntity roleRepo = roleRepository.findByName("PRUEBA").orElseGet(() -> {
             RoleEntity role = new RoleEntity();
@@ -53,9 +69,16 @@ class UserRepositoryTest {
         UserEntity saved = userRepository.saveAndFlush(user);
         entityManager.clear();
         return saved;
-    }
+    } // Cierre del método
 
-    /** Cuenta con los roles dados, creada e inactiva si tiene fecha de desactivación */
+    /**
+     * Método que guarda una cuenta con fechas de creación y desactivación dadas, para las pruebas de RF-12.
+     *
+     * @param email El correo.
+     * @param createdAt La fecha de creación.
+     * @param deactivatedAt La fecha de desactivación, o null.
+     * @param roleNames Los roles de la cuenta.
+     */
     private void account(String email, LocalDateTime createdAt, LocalDateTime deactivatedAt, String... roleNames) {
         Set<RoleEntity> roles = new HashSet<>();
         for (String name : roleNames) {
@@ -76,8 +99,11 @@ class UserRepositoryTest {
         entityManager.getEntityManager().createNativeQuery("UPDATE users SET created_at = :createdAt WHERE id = :id")
                 .setParameter("createdAt", createdAt).setParameter("id", id).executeUpdate();
         entityManager.clear();
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que se guarda una cuenta con teléfonos, roles y fechas.
+     */
     @Test
     void savesUserWithPhonesRolesAndDates() {
         UserEntity saved = newUser("ana@mail.com", null);
@@ -89,8 +115,11 @@ class UserRepositoryTest {
         assertThat(found.getRoles()).extracting(RoleEntity::getName).containsExactly("PRUEBA");
         assertThat(userRepository.existsByEmail("ana@mail.com")).isTrue();
         assertThat(userRepository.existsByEmail("otro@mail.com")).isFalse();
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que la búsqueda por id y estado ignora las cuentas inactivas.
+     */
     @Test
     void findByIdAndAccountStatusIgnoresInactiveUsers() {
         UserEntity active = newUser("activo@mail.com", AccountStatus.ACTIVE);
@@ -98,8 +127,11 @@ class UserRepositoryTest {
 
         assertThat(userRepository.findByIdAndAccountStatus(active.getId(), AccountStatus.ACTIVE)).isPresent();
         assertThat(userRepository.findByIdAndAccountStatus(inactive.getId(), AccountStatus.ACTIVE)).isEmpty();
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que la búsqueda de varios ids devuelve solo las cuentas activas.
+     */
     @Test
     void findByIdInAndAccountStatusReturnsOnlyActiveUsers() {
         UserEntity active = newUser("activo@mail.com", AccountStatus.ACTIVE);
@@ -109,8 +141,11 @@ class UserRepositoryTest {
                 List.of(active.getId(), inactive.getId(), UUID.randomUUID()), AccountStatus.ACTIVE);
 
         assertThat(found).extracting(UserEntity::getId).containsExactly(active.getId());
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que al reemplazar los teléfonos se borran los anteriores.
+     */
     @Test
     void replacingPhonesRemovesOldOnes() {
         UserEntity saved = newUser("ana@mail.com", AccountStatus.ACTIVE);
@@ -126,15 +161,21 @@ class UserRepositoryTest {
                 .createQuery("select count(p) from PhoneEntity p", Long.class).getSingleResult();
         assertThat(phones).isEqualTo(1L);
         assertThat(found.getUpdatedAt()).isNotNull();
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que el correo es único en la base de datos.
+     */
     @Test
     void emailMustBeUnique() {
         newUser("ana@mail.com", AccountStatus.ACTIVE);
 
         assertThrows(DataIntegrityViolationException.class, () -> newUser("ana@mail.com", AccountStatus.ACTIVE));
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que la búsqueda por correo devuelve la cuenta sin importar su estado.
+     */
     @Test
     void findByEmailReturnsAccountRegardlessOfStatus() {
         UserEntity inactive = newUser("inactivo@mail.com", AccountStatus.INACTIVE);
@@ -142,8 +183,11 @@ class UserRepositoryTest {
         assertThat(userRepository.findByEmail("inactivo@mail.com")).get()
                 .extracting(UserEntity::getId).isEqualTo(inactive.getId());
         assertThat(userRepository.findByEmail("otro@mail.com")).isEmpty();
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que se guarda la fecha de desactivación.
+     */
     @Test
     void savesDeactivationDate() {
         UserEntity inactive = newUser("inactivo@mail.com", AccountStatus.INACTIVE);
@@ -153,8 +197,12 @@ class UserRepositoryTest {
         entityManager.clear();
 
         assertThat(userRepository.findById(inactive.getId()).orElseThrow().getDeactivatedAt()).isEqualTo(date);
-    }
+    } // Cierre del método
 
+    /**
+     * Prueba que las consultas de RF-12 cuentan bien las registradas hasta la fecha de fin y las desactivadas
+     * en el periodo.
+     */
     @Test
     void countsAccountsByRoleRegisteredUntilEndAndDeactivatedInPeriod() {
         LocalDateTime start = LocalDateTime.of(2026, 11, 1, 0, 0);
@@ -172,9 +220,12 @@ class UserRepositoryTest {
         assertThat(userRepository.countDeactivated(both, start, end)).isEqualTo(1);
         assertThat(userRepository.countDeactivated(List.of("TRABAJADOR"), start, end)).isEqualTo(1);
         assertThat(userRepository.countDeactivated(List.of("CONTRATANTE"), start, end)).isEqualTo(1);
-    }
+    } // Cierre del método
 
-    /** La sentencia de data.sql completa la fecha de las cuentas inactivas que no la tienen. */
+    /**
+     * Prueba que la sentencia de data.sql completa la fecha de desactivación de las cuentas inactivas que no
+     * la tienen.
+     */
     @Test
     void dataSqlFillsDeactivationDateOfOldInactiveAccounts() throws IOException {
         UserEntity active = newUser("activo@mail.com", AccountStatus.ACTIVE);
@@ -189,5 +240,5 @@ class UserRepositoryTest {
         UserEntity filled = userRepository.findById(oldInactive.getId()).orElseThrow();
         assertThat(filled.getDeactivatedAt()).isEqualTo(filled.getUpdatedAt());
         assertThat(userRepository.findById(active.getId()).orElseThrow().getDeactivatedAt()).isNull();
-    }
-}
+    } // Cierre del método
+} // Cierre de la clase

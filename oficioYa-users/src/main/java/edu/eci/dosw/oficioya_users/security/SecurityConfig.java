@@ -11,9 +11,33 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/**
+ * Clase de configuración para la API sin sesión (Stateless),
+ * autenticación con JWT y permisos por ruta y rol.
+ * Usa Spring Security
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
+
 @Configuration
 public class SecurityConfig {
 
+    /**
+     * Método que define qué rutas son públicas, cuáles son solo para SERVICE,
+     * cuáles solo para ADMIN y que el resto requiera token
+     *
+     * @param http La configuración HTTP de Spring Security
+     * @param objectMapper El convertidor JSON para errores
+     * @param secret El secreto JWT en Base64
+     * @param rolesClaim El nombre del claim de roles
+     * @return SecurityFilterChain La cadena de seguridad aplicada
+     * a cada petición
+     * @throws Exception Las excepciones (errores) que retorna Spring Security
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    ObjectMapper objectMapper,
@@ -41,5 +65,5 @@ public class SecurityConfig {
                         .accessDeniedHandler(errorHandler))
                 .addFilterBefore(new JwtAuthenticationFilter(secret, rolesClaim), UsernamePasswordAuthenticationFilter.class)
                 .build();
-    }
-}
+    } // Cierre del método
+} // Cierre de la clase

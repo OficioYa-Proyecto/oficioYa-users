@@ -12,6 +12,18 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Clase de dominio de una cuenta sin anotaciones JPA
+ * UserService aplica reglas de negocio sobre ella para no depender
+ * de la base  de datos
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz Salcedo
+ * @author Juan Pablo Duarte Silva
+ * @author Nicolás Esteban Delgado Rodríguez
+ * @version 24/11/2026
+ */
+
 @Getter
 @Setter
 public class UserModel {
@@ -26,4 +38,4 @@ public class UserModel {
     private LocalDateTime deactivatedAt;
     private List<PhoneModel> phones = new ArrayList<>();
     private Set<RoleModel> roles = new HashSet<>();
-}
+} // Cierre de la clase
