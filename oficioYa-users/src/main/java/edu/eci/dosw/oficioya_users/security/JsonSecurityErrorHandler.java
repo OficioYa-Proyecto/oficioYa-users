@@ -17,6 +17,16 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 
 import java.io.IOException;
 
+/**
+ * Responde los errores de seguridad (401 sin token o con token inválido, 403 sin permiso)
+ * con el mismo formato JSON de ApiError que el resto de la API.
+ *
+ * @author Daniel Felipe Sua
+ * @author David Felipe Ortiz
+ * @author Juan Pablo Duarte
+ * @author Nicolas Esteban Delgado
+ * @version 26/11/2026
+ */
 public class JsonSecurityErrorHandler implements AuthenticationEntryPoint, AccessDeniedHandler {
 
     private final ObjectMapper objectMapper;

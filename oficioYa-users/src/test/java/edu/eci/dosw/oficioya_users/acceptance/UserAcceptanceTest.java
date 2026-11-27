@@ -51,9 +51,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
          * simula con @MockBean. Cada clase @Nested agrupa un requerimiento
          *
          * @author Daniel Felipe Sua
-         * @author David Felipe Ortiz Salcedo
-         * @author Juan Pablo Duarte Silva
-         * @author Nicolás Esteban Delgado Rodríguez
+         * @author David Felipe Ortiz
+         * @author Juan Pablo Duarte
+         * @author Nicolas Esteban Delgado
          * @version 24/11/2026
          */
         "spring.datasource.url=jdbc:h2:mem:oficioya_acceptance;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",

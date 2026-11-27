@@ -12,9 +12,9 @@ import java.util.UUID;
  * Clase DTO de una petición para quitar un rol, tal como la ven el usuario y el administrador (RF-13).
  *
  * @author Daniel Felipe Sua
- * @author David Felipe Ortiz Salcedo
- * @author Juan Pablo Duarte Silva
- * @author Nicolás Esteban Delgado Rodríguez
+ * @author David Felipe Ortiz
+ * @author Juan Pablo Duarte
+ * @author Nicolas Esteban Delgado
  * @version 24/11/2026
  */
 @Data

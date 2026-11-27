@@ -25,9 +25,9 @@ import static org.mockito.Mockito.when;
  * Clase de pruebas de AdminSeeder con repositorios simulados (Mockito)
  *
  * @author Daniel Felipe Sua
- * @author David Felipe Ortiz Salcedo
- * @author Juan Pablo Duarte Silva
- * @author Nicolás Esteban Delgado Rodríguez
+ * @author David Felipe Ortiz
+ * @author Juan Pablo Duarte
+ * @author Nicolas Esteban Delgado
  * @version 24/11/2026
  */
 @ExtendWith(MockitoExtension.class)

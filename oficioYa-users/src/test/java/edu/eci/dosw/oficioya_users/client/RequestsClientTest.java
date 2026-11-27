@@ -30,9 +30,9 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
  * Clase de pruebas de RequestsClient con un servidor HTTP simulado (MockRestServiceServer)
  *
  * @author Daniel Felipe Sua
- * @author David Felipe Ortiz Salcedo
- * @author Juan Pablo Duarte Silva
- * @author Nicolás Esteban Delgado Rodríguez
+ * @author David Felipe Ortiz
+ * @author Juan Pablo Duarte
+ * @author Nicolas Esteban Delgado
  * @version 24/11/2026
  */
 class RequestsClientTest {

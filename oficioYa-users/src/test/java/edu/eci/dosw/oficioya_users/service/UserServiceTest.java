@@ -57,9 +57,9 @@ import static org.mockito.Mockito.when;
  * (Mockito), los mappers son reales
  *
  * @author Daniel Felipe Sua
- * @author David Felipe Ortiz Salcedo
- * @author Juan Pablo Duarte Silva
- * @author Nicolás Esteban Delgado Rodríguez
+ * @author David Felipe Ortiz
+ * @author Juan Pablo Duarte
+ * @author Nicolas Esteban Delgado
  * @version 24/11/2026
  */
 @ExtendWith(MockitoExtension.class)

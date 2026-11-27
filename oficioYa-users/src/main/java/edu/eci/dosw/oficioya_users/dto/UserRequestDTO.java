@@ -20,9 +20,9 @@ import java.util.Set;
  * las valida UserService
  *
  * @author Daniel Felipe Sua
- * @author David Felipe Ortiz Salcedo
- * @author Juan Pablo Duarte Silva
- * @author Nicolás Esteban Delgado Rodríguez
+ * @author David Felipe Ortiz
+ * @author Juan Pablo Duarte
+ * @author Nicolas Esteban Delgado
  * @version 24/11/2026
  */
 @Data

@@ -8,9 +8,9 @@ import org.springframework.http.HttpStatus;
  * (error HHTP 403)
  *
  * @author Daniel Felipe Sua
- * @author David Felipe Ortiz Salcedo
- * @author Juan Pablo Duarte Silva
- * @author Nicolás Esteban Delgado Rodríguez
+ * @author David Felipe Ortiz
+ * @author Juan Pablo Duarte
+ * @author Nicolas Esteban Delgado
  * @version 24/11/2026
  */
 public class ForbiddenOperationException extends ApiException {
