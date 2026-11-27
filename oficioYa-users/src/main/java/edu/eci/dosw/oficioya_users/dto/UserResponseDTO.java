@@ -16,9 +16,9 @@ import java.util.UUID;
  * la vista pública, la propia y la del administrador
  *
  * @author Daniel Felipe Sua
- * @author David Felipe Ortiz Salcedo
- * @author Juan Pablo (completar apellidos)
- * @author Nicolás (completar apellidos)
+ * @author David Felipe Ortiz
+ * @author Juan Pablo Duarte
+ * @author Nicolas Esteban Delgado
  * @version 24/11/2026
  */
 @Data

@@ -26,9 +26,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Clase de pruebas de UserRepository con una base de datos en memoria (@DataJpaTest)
  *
  * @author Daniel Felipe Sua
- * @author David Felipe Ortiz Salcedo
- * @author Juan Pablo Duarte Silva
- * @author Nicolás Esteban Delgado Rodríguez
+ * @author David Felipe Ortiz
+ * @author Juan Pablo Duarte
+ * @author Nicolas Esteban Delgado
  * @version 24/11/2026
  */
 @DataJpaTest

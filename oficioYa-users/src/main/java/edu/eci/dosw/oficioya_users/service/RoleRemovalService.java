@@ -32,9 +32,9 @@ import java.util.UUID;
  * y solo el administrador lo quita
  *
  * @author Daniel Felipe Sua
- * @author David Felipe Ortiz Salcedo
- * @author Juan Pablo Duarte Silva
- * @author Nicolás Esteban Delgado Rodríguez
+ * @author David Felipe Ortiz
+ * @author Juan Pablo Duarte
+ * @author Nicolas Esteban Delgado
  * @version 24/11/2026
  */
 @Slf4j
@@ -242,7 +242,7 @@ public class RoleRemovalService {
     private void notifyRoleRemoval(String action, RoleRemovalRequestEntity request) {
         boolean toAdmin = ACTION_REQUESTED.equals(action);
         if (toAdmin && (adminEmail == null || adminEmail.isBlank())) {
-            log.warn("ADMIN_EMAIL no está configurado: no se avisa al administrador de la petición {}",
+            log.warn("ADMIN_NOTIFICATION_EMAIL no está configurado: no se avisa al administrador de la petición {}",
                     request.getId());
             return;
         }

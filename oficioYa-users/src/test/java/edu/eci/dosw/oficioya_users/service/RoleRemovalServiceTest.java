@@ -46,9 +46,9 @@ import static org.mockito.Mockito.when;
  * (Mockito), incluido el payload de los correos que se piden a Servicios.
  *
  * @author Daniel Felipe Sua
- * @author David Felipe Ortiz Salcedo
- * @author Juan Pablo Duarte Silva
- * @author Nicolás Esteban Delgado Rodríguez
+ * @author David Felipe Ortiz
+ * @author Juan Pablo Duarte
+ * @author Nicolas Esteban Delgado
  * @version 24/11/2026
  */
 @ExtendWith(MockitoExtension.class)
@@ -63,7 +63,7 @@ class RoleRemovalServiceTest {
     @Mock
     private RequestsClient requestsClient;
 
-    private static final String ADMIN_EMAIL = "admin@oficioya.com";
+    private static final String ADMIN_NOTIFICATION_EMAIL = "admin@oficioya.com";
     private static final String USER_EMAIL = "ana@mail.com";
 
     private RoleRemovalService service;
@@ -74,7 +74,7 @@ class RoleRemovalServiceTest {
      */
     @BeforeEach
     void setUp() {
-        service = new RoleRemovalService(requestRepository, userRepository, userService, requestsClient, ADMIN_EMAIL);
+        service = new RoleRemovalService(requestRepository, userRepository, userService, requestsClient, ADMIN_NOTIFICATION_EMAIL);
     } // Cierre del método
 
     /**
@@ -433,7 +433,7 @@ class RoleRemovalServiceTest {
         assertThat(sent.userName()).isEqualTo("Ana Pérez");
         assertThat(sent.reason()).isEqualTo("Ya no quiero ofrecer mis servicios");
         assertThat(sent.adminReason()).isNull();
-        assertThat(sent.adminEmail()).isEqualTo(ADMIN_EMAIL);
+        assertThat(sent.adminEmail()).isEqualTo(ADMIN_NOTIFICATION_EMAIL);
         assertThat(sent.userEmail()).isNull();
     } // Cierre del método
 
@@ -450,7 +450,7 @@ class RoleRemovalServiceTest {
     } // Cierre del método
 
     /**
-     * Prueba que si falta ADMIN_EMAIL la petición se crea igual pero no se llama a Servicios.
+     * Prueba que si falta ADMIN_NOTIFICATION_EMAIL la petición se crea igual pero no se llama a Servicios.
      */
     @Test
     void createWithoutAdminEmailSavesRequestButDoesNotNotify() {
